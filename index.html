@@ -371,10 +371,16 @@ function vLogin(){
 }
 
 function vAdmin(){
-  const tabs=`<div class="tabs">${[["tareas","Tareas"],["historial","Historial"],["codigo","Código"]].map(([k,l])=>`<button class="tab ${S.aTab===k?"on":""}" data-act="atab" data-v="${k}">${l}</button>`).join("")}</div>`;
+  const tabs=`<div class="tabs">${[["tareas","Tareas"],["vaciar","Vaciar"],["historial","Historial"],["codigo","Código"]].map(([k,l])=>`<button class="tab ${S.aTab===k?"on":""}" data-act="atab" data-v="${k}">${l}</button>`).join("")}</div>`;
   let body="";
   if(S.aTab==="tareas")body=vAdminTareas();
   if(S.aTab==="historial")body=vAdminHist();
+  if(S.aTab==="vaciar"){const hoy=diaOp(0);
+    body=`<div class="form"><h2>Vaciar listas de hoy</h2>
+    <p class="muted" style="margin:0">Deja sin tildar todas las listas que se completaron hoy (${DIAS[hoy.getDay()].toLowerCase()} ${hoy.getDate()}/${hoy.getMonth()+1}): tics, motivos, comentarios y datos. Sirve para borrar pruebas o volver a empezar.</p>
+    <p class="muted small" style="margin:0">No hace falta hacerlo todos los días: cada día las listas arrancan vacías solas. Lo de días anteriores queda en el historial.</p>
+    ${S.vaciarOk?`<div class="confirm"><span><b>¿Vaciar todas las listas de hoy?</b> No se puede deshacer.</span><button class="btn primary" data-act="vaciarSi" ${S.busy?"disabled":""}>Sí, vaciar</button><button class="btn" data-act="vaciarNo">Cancelar</button></div>`
+      :`<button class="btn primary" data-act="vaciar">Vaciar listas de hoy</button>`}</div>`}
   if(S.aTab==="codigo")body=`<form class="form" id="codeF"><h2>Cambiar código</h2>
     <div class="field"><label for="nc1">Código nuevo (mínimo 4 números)</label><input class="inp" id="nc1" type="password" inputmode="numeric" autocomplete="off"></div>
     <div class="field"><label for="nc2">Repetilo</label><input class="inp" id="nc2" type="password" inputmode="numeric" autocomplete="off"></div>
@@ -480,6 +486,16 @@ $app.addEventListener("click",async e=>{
   else if(a==="up"||a==="down"){const t=clone(turno(S.aTurno));const arr=t.tareas;const i=arr.findIndex(x=>x.id===id);const bl=arr[i].bloque;
     let j=i;do{j+=a==="up"?-1:1}while(j>=0&&j<arr.length&&arr[j].bloque!==bl);
     if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];await guardarTurno(t)}
+  else if(a==="vaciar"){S.vaciarOk=true;render()}
+  else if(a==="vaciarNo"){S.vaciarOk=false;render()}
+  else if(a==="vaciarSi"){
+    S.busy=true;render();const f=fechaKey(diaOp(0));
+    try{const rows=await api("registros?select=id,turno_id,data&fecha=eq."+f);
+      for(const r of rows){const d={...r.data,items:{},cerrado:false,cerradoHora:"",hechas:0,actualizado:new Date().toISOString()};
+        await api("registros?on_conflict=id",{method:"POST",prefer:"resolution=merge-duplicates,return=minimal",body:{id:r.id,fecha:f,turno_id:r.turno_id,data:d,actualizado:d.actualizado}})}
+      if(S.reg&&S.reg.fecha===f){S.reg.items={};S.reg.cerrado=false;S.reg.cerradoHora=""}
+      S.motOpen=new Set();S.vaciarOk=false;S.busy=false;render();toast(rows.length?`Listo: ${rows.length} ${rows.length===1?"lista vaciada":"listas vaciadas"}`:"No había listas tildadas hoy")}
+    catch(e){S.busy=false;S.vaciarOk=false;render();toast("No se pudo vaciar. Revisá la conexión.")}}
   else if(a==="hist"){S.histOpen=S.histOpen===id?null:id;render()}
 });
 
