@@ -178,6 +178,11 @@ footer{display:flex;justify-content:center}
 const DIAS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 const DIAS_C=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const FORMATOS={turno8:"Turno 8 hs",noche:"Soporte noche",soporte:"Soporte tareas"};
+const COMP="Lo hizo uno de mis compañeros";
+const faltaMotivo=it=>!it?.motivo||(it.motivo===COMP&&!(it.comentario||"").trim());
+const campoComent=(x,it)=>it.motivo===COMP
+  ?`<label for="c_${x.id}">¿Quién la hizo? (obligatorio)</label><input type="text" id="c_${x.id}" data-coment="${x.id}" value="${esc(it.comentario||"")}" placeholder="Nombre del compañero">`
+  :`<label for="c_${x.id}">Comentario (opcional)</label><input type="text" id="c_${x.id}" data-coment="${x.id}" value="${esc(it.comentario||"")}">`;
 const MOTIVOS=["Mucha gente / no hubo tiempo","Faltó mercadería o insumo","No sabía cómo hacerla","La dejé para el próximo turno (avisado)","Lo hizo uno de mis compañeros","Me olvidé","Otro"];
 const ICON_CHECK='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const ICON_CAM='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l2-3h8l2 3h3v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>';
@@ -311,7 +316,7 @@ function vLista(){
           ${!ro&&!it.hecho?((it.motivo||S.motOpen.has(x.id))?`<div class="nohice">
               <div class="field"><label for="m_${x.id}">¿Por qué no se pudo hacer?</label>
               <select id="m_${x.id}" data-motivo="${x.id}"><option value="">Elegí un motivo</option>${MOTIVOS.map(m=>`<option ${it.motivo===m?"selected":""}>${esc(m)}</option>`).join("")}</select></div>
-              <div class="field"><label for="c_${x.id}">Comentario (opcional)</label><input type="text" id="c_${x.id}" data-coment="${x.id}" value="${esc(it.comentario||"")}"></div></div>`
+              <div class="field">${campoComent(x,it)}</div></div>`
             :`<button class="linkbtn" data-act="nohice" data-id="${x.id}">No la pude hacer</button>`):""}
           ${campo}</div></div>`}).join("")}</section>`).join("");
   return `<button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button>
@@ -338,8 +343,8 @@ function vCierre(){
   ${no.map(x=>{const it=S.reg.items[x.id]||{};return `<div class="pend"><span class="tt">${esc(x.texto)}</span>
     <div class="field"><label for="m_${x.id}">¿Por qué no se hizo?</label>
     <select id="m_${x.id}" data-motivo="${x.id}"><option value="">Elegí un motivo</option>${MOTIVOS.map(m=>`<option ${it.motivo===m?"selected":""}>${esc(m)}</option>`).join("")}</select></div>
-    <div class="field"><label for="c_${x.id}">Comentario (opcional)</label><input type="text" id="c_${x.id}" data-coment="${x.id}" value="${esc(it.comentario||"")}"></div>
-    ${S.cierreErr&&!it.motivo?`<span class="err">Falta elegir el motivo.</span>`:""}</div>`}).join("")}
+    <div class="field">${campoComent(x,it)}</div>
+    ${S.cierreErr&&!it.motivo?`<span class="err">Falta elegir el motivo.</span>`:S.cierreErr&&faltaMotivo(it)?`<span class="err">Falta poner quién la hizo.</span>`:""}</div>`}).join("")}
   ${faltaDato.length?`<div class="note">Falta completar: ${faltaDato.map(x=>esc(x.campo.label)).join(", ")}. Volvé a la lista para cargarlo.</div>`:""}
   <button class="btn primary big" data-act="cerrar">Terminar y armar resumen</button>`;
 }
@@ -460,7 +465,7 @@ $app.addEventListener("click",async e=>{
   else if(a==="cierre"){S.view="cierre";S.cierreErr=false;render();window.scrollTo(0,0)}
   else if(a==="cerrar"){
     const t=turno(S.turnoId);const no=(t.tareas||[]).filter(x=>!S.reg.items[x.id]?.hecho);
-    if(no.some(x=>!S.reg.items[x.id]?.motivo)){S.cierreErr=true;render();toast("Elegí el motivo de cada tarea sin hacer.");return}
+    if(no.some(x=>faltaMotivo(S.reg.items[x.id]))){S.cierreErr=true;S.view="cierre";render();toast("Falta el motivo (o quién la hizo) en alguna tarea.");return}
     S.reg.cerrado=true;S.reg.cerradoHora=horaAhora();saveReg();S.view="resumen";render();window.scrollTo(0,0)}
   else if(a==="reabrir"){S.reg.cerrado=false;S.reg.cerradoHora="";saveReg();S.view="lista";render()}
   else if(a==="copiar"){const txt=resumenTexto();
