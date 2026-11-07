@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#a41f22">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tareas Brandsen">
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23a41f22'/%3E%3Cpath d='M17 33l10 10 20-22' fill='none' stroke='%23e2c21f' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23a41f22'/%3E%3Cpath d='M17 33l10 10 20-22' fill='none' stroke='%23e2c21f' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<title>Tareas Kiosco Brandsen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Archivo:wght@400;500;600;700&display=swap">
+<style>
+html{-webkit-text-size-adjust:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* Layout: banda roja de marca arriba, una columna angosta tipo planilla, filas grandes para tildar con el dedo */
+:root{
+  --bg:#f8f5f0; --surface:#ffffff; --ink:#1f1515; --muted:#6e5c58; --line:#e8ddd5;
+  --red:#a41f22; --band:#a41f22; --on-band:#ffffff; --yellow:#e2c21f; --yellow-soft:#f6e9a6; --on-yellow:#2a1d00;
+  --ok:#2c7a47; --ok-soft:#e1f1e6; --warn:#a8510c; --warn-soft:#fbeadb;
+  --f-display:"Archivo Black","Arial Black",Impact,sans-serif;
+  --f-label:"Anton","Impact","Arial Narrow",sans-serif;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#171010; --surface:#231818; --ink:#f5ece8; --muted:#b9a5a0; --line:#3a2927;
+  --red:#e2524d; --band:#8e1a1d; --on-band:#ffffff; --yellow:#f0d34a; --yellow-soft:#4a3d0c; --on-yellow:#2a1d00;
+  --ok:#5cc282; --ok-soft:#173222; --warn:#f0954a; --warn-soft:#3b2414; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171010; --surface:#231818; --ink:#f5ece8; --muted:#b9a5a0; --line:#3a2927;
+  --red:#e2524d; --band:#8e1a1d; --on-band:#ffffff; --yellow:#f0d34a; --yellow-soft:#4a3d0c; --on-yellow:#2a1d00;
+  --ok:#5cc282; --ok-soft:#173222; --warn:#f0954a; --warn-soft:#3b2414; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+.band{background:var(--band);color:var(--on-band)}
+.band .in{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;flex-direction:column;line-height:1}
+.brand .k{font-family:var(--f-display);color:var(--yellow);font-size:15px;letter-spacing:.04em}
+.brand .b{font-family:var(--f-display);font-size:26px;letter-spacing:.01em}
+.band .date{font-family:var(--f-label);font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--yellow)}
+
+main{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:22px}
+
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-family:var(--f-display);font-size:26px;line-height:1.1}
+h2{font-family:var(--f-label);font-weight:400;font-size:17px;letter-spacing:.07em;text-transform:uppercase;color:var(--red)}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--f-label);font-size:12.5px;letter-spacing:.07em;text-transform:uppercase;padding:3px 8px;border-radius:4px;background:var(--yellow-soft);color:var(--ink);white-space:nowrap}
+.chip.f-noche{background:var(--band);color:var(--on-band)}
+.chip.f-soporte{background:var(--yellow);color:var(--on-yellow)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+
+/* tarjetas de turno */
+.turnos{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.tcard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.tcard:hover{border-color:var(--red)}
+.tcard .who{font-family:var(--f-display);font-size:22px;line-height:1}
+.tcard .hrs{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+.tcard .state{font-size:13px;color:var(--muted)}
+
+/* selector de días */
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.daychip{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 0 8px;display:flex;flex-direction:column;align-items:center;gap:2px;font-family:var(--f-label);font-size:16px;letter-spacing:.05em;text-transform:uppercase;min-width:0}
+.daychip i{font-style:normal;font-family:var(--f-body);font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--red)}
+.daychip.on{background:var(--red);border-color:var(--red);color:#fff}
+.daychip.on i{color:var(--yellow)}
+/* reglas soporte */
+.rule{background:var(--band);color:var(--on-band);border-radius:10px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.rule svg{flex:none;margin-top:2px}
+.rule strong{font-family:var(--f-display);display:block;font-size:17px;color:var(--yellow);letter-spacing:.01em}
+.rule p{margin:4px 0 0;font-size:15px}
+
+/* progreso */
+.prog{display:flex;align-items:center;gap:12px}
+.bar{flex:1;height:10px;background:var(--line);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:6px;transition:width .25s}
+.prog b{font-family:var(--f-label);font-weight:400;font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:.03em}
+
+/* bloques y tareas */
+.block{display:flex;flex-direction:column;gap:0}
+.block h2{padding:0 2px 8px;border-bottom:2px solid var(--red)}
+.task{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line);align-items:start}
+.cb{width:40px;height:40px;border-radius:8px;border:2px solid var(--muted);background:var(--surface);display:grid;place-items:center;padding:0}
+.cb svg{opacity:0}
+.task.done .cb{background:var(--ok);border-color:var(--ok)}
+.task.done .cb svg{opacity:1}
+.task .txt{min-width:0;display:flex;flex-direction:column;gap:6px;padding-top:8px}
+.task.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted)}
+.meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.hora{font-size:12.5px;color:var(--ok);font-variant-numeric:tabular-nums;font-weight:600}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px;font-weight:600}
+.field input[type=text],.field select,textarea,input.inp,select.inp{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:9px 10px}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.opt{border:1px solid var(--line);background:var(--bg);border-radius:20px;padding:6px 12px;font-size:14px}
+.opt.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:22px;text-align:center;color:var(--muted)}
+
+/* botones */
+.btn{border:0;border-radius:8px;padding:12px 18px;font-weight:700;background:var(--surface);border:1px solid var(--line)}
+.btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+.btn.yellow{background:var(--yellow);color:var(--on-yellow);border-color:var(--yellow)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted);padding:8px 4px}
+.btn.big{width:100%;padding:16px;font-family:var(--f-display);font-size:17px;letter-spacing:.02em}
+.btn:disabled{opacity:.5;cursor:default}
+.back{align-self:flex-start;display:inline-flex;align-items:center;gap:6px}
+
+/* cierre */
+.pend{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--warn);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.pend .tt{font-weight:600}
+.err{color:var(--warn);font-size:14px;font-weight:600}
+
+.summary{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;white-space:pre-wrap;font-size:15px;overflow-wrap:anywhere}
+
+/* admin */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;padding:10px 12px;font-family:var(--f-label);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+.tab.on{color:var(--red);border-bottom-color:var(--red)}
+.adm-task{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center}
+.adm-task .tt{min-width:0}
+.icons{display:flex;gap:4px}
+.ib{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0}
+.ib.danger{color:var(--warn)}
+.confirm{display:flex;gap:6px;align-items:center;flex-wrap:wrap;font-size:14px}
+.form{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:480px){.form .two{grid-template-columns:1fr}}
+.check{display:flex;gap:8px;align-items:center}
+.check input{width:20px;height:20px}
+.hist{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;text-align:left;width:100%}
+.hist .top{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.hist .det{border-top:1px solid var(--line);padding-top:8px;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.motbar{display:grid;grid-template-columns:minmax(0,1fr) 120px 28px;gap:10px;align-items:center;font-size:14px}
+.motbar .b{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.motbar .b i{display:block;height:100%;background:var(--warn)}
+.motbar span:last-child{font-variant-numeric:tabular-nums;text-align:right}
+.code{font-family:var(--f-label);font-size:28px;letter-spacing:.3em;text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+.note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600}
+footer{display:flex;justify-content:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<header class="band"><div class="in">
+  <div class="brand"><span class="k">KIOSCO</span><span class="b">BRANDSEN</span></div>
+  <div class="date" id="hdate"></div>
+</div></header>
+<main id="app"><div class="empty">Cargando turnos…</div></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const DIAS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+const DIAS_C=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+const FORMATOS={turno8:"Turno 8 hs",noche:"Soporte noche",soporte:"Soporte tareas"};
+const MOTIVOS=["Mucha gente / no hubo tiempo","Faltó mercadería o insumo","No sabía cómo hacerla","La dejé para el próximo turno (avisado)","Me olvidé","Otro"];
+const ICON_CHECK='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+const ICON_CAM='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l2-3h8l2 3h3v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const ICON_PHONE='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M3 3l18 18"/></svg>';
+const ICON_BACK='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
+const ICON_UP='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 15l6-6 6 6"/></svg>';
+const ICON_DOWN='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>';
+const ICON_DEL='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>';
+
+const SB_URL="https://gkdlbldafyzpminpykvg.supabase.co";
+const SB_KEY="sb_publishable_B2xWIiuHxtj6uMQbjiWMog_Jkt0NNE4";
+async function api(path,{method="GET",body,prefer}={}){
+  const headers={apikey:SB_KEY,"Content-Type":"application/json"};if(prefer)headers.Prefer=prefer;
+  const r=await fetch(`${SB_URL}/rest/v1/${path}`,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});
+  const txt=await r.text();let data=null;try{data=txt?JSON.parse(txt):null}catch(_){}
+  if(!r.ok){const e=new Error(data?.message||("HTTP "+r.status));e.status=r.status;e.msg=data?.message||"";throw e}
+  return data;
+}
+const rpc=(fn,args)=>api("rpc/"+fn,{method:"POST",body:args});
+const S={db:true,code:"",turnos:[],loaded:false,loadNote:"",view:"home",turnoId:null,reg:null,readonly:false,
+  cierreErr:false,admin:false,aTab:"tareas",aTurno:null,aConfirm:null,aBloqueNuevo:false,aCampo:"ninguno",hist:null,histOpen:null,loginErr:"",busy:false};
+
+const $app=document.getElementById("app");
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const clone=o=>JSON.parse(JSON.stringify(o));
+const uid=()=>"t"+Math.random().toString(36).slice(2,9);
+
+/* Día operativo: hasta las 3 AM cuenta como el día anterior (turnos que cierran a la 1) */
+function diaOp(offset=0){const d=new Date();if(d.getHours()<3)d.setDate(d.getDate()-1);d.setDate(d.getDate()+offset);return d}
+const fechaKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fechaCorta=d=>`${DIAS_C[d.getDay()].toLowerCase()} ${d.getDate()}/${d.getMonth()+1}`;
+const horaAhora=()=>{const d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes())};
+
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600)}
+
+const turno=id=>S.turnos.find(t=>t.id===id);
+const turnosDelDia=dia=>S.turnos.filter(t=>t.dia===dia).sort((a,b)=>(a.inicio||0)-(b.inicio||0));
+function bloquesDe(t){const order=[...(t.bloques||[])];(t.tareas||[]).forEach(x=>{if(!order.includes(x.bloque))order.push(x.bloque)});return order.filter(b=>(t.tareas||[]).some(x=>x.bloque===b))}
+
+/* ---------- registro del turno (borrador que se guarda solo) ---------- */
+let writing=false,dirty=false,saveT=null;
+function saveReg(){if(!S.reg||S.readonly)return;dirty=true;clearTimeout(saveT);saveT=setTimeout(flush,450)}
+async function flush(){
+  if(writing||!dirty||!S.db||!S.reg)return;writing=true;dirty=false;
+  const t=turno(S.reg.turnoId);
+  if(t){S.reg.tareasSnapshot=(t.tareas||[]).map(x=>({id:x.id,texto:x.texto,bloque:x.bloque,campo:x.campo?.label||"",foto:!!x.foto}));
+    S.reg.total=(t.tareas||[]).length;S.reg.hechas=(t.tareas||[]).filter(x=>S.reg.items[x.id]?.hecho).length}
+  S.reg.actualizado=new Date().toISOString();
+  try{await api("registros?on_conflict=id",{method:"POST",prefer:"resolution=merge-duplicates,return=minimal",body:{id:S.reg.id,fecha:S.reg.fecha,turno_id:S.reg.turnoId,data:clone(S.reg),actualizado:S.reg.actualizado}})}
+  catch(e){toast("No se pudo guardar. Revisá la conexión a internet.");dirty=true}
+  writing=false;if(dirty)saveT=setTimeout(flush,1500);
+}
+function item(id){if(!S.reg.items[id])S.reg.items[id]={hecho:false,hora:"",motivo:"",comentario:"",dato:""};return S.reg.items[id]}
+
+async function abrirTurno(id,readonly){
+  const t=turno(id);if(!t)return;
+  S.turnoId=id;S.readonly=!!readonly;S.cierreErr=false;
+  const d=readonly?ultimaFecha(t.dia):diaOp(0);const key=fechaKey(d)+"_"+id;
+  S.reg={id:key,fecha:fechaKey(d),fechaTxt:fechaCorta(d),turnoId:id,turnoNombre:t.nombre,persona:t.persona,formato:t.formato,items:{},cerrado:false,cerradoHora:""};
+  S.regExiste=false;S.view="lista";render();window.scrollTo(0,0);
+  if(!S.db)return;
+  try{const rows=await api("registros?select=data&id=eq."+encodeURIComponent(key));
+    if(rows&&rows.length&&S.turnoId===id){const d0=rows[0].data;S.reg=Object.assign(S.reg,clone(d0));S.regExiste=true;if(S.reg.cerrado&&!readonly)S.view="resumen";render()}}
+  catch(e){}
+}
+
+/* ---------- resumen para WhatsApp ---------- */
+function resumenTexto(){
+  const t=turno(S.reg.turnoId);const tareas=t?.tareas||[];
+  const hechas=tareas.filter(x=>S.reg.items[x.id]?.hecho);
+  const no=tareas.filter(x=>!S.reg.items[x.id]?.hecho);
+  let s=`✅ *${t.nombre} – ${t.persona}* · ${S.reg.fechaTxt}\n${FORMATOS[t.formato]} · ${t.horario}\nHechas: ${hechas.length}/${tareas.length}`;
+  if(S.reg.cerradoHora)s+=` · Cerrado ${S.reg.cerradoHora}`;
+  if(no.length){s+=`\n\n❌ *No hechas*`;no.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
+  const datos=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.dato);
+  if(datos.length){s+=`\n\n📋 *Avisos*`;datos.forEach(x=>{s+=`\n• ${x.campo.label}: ${S.reg.items[x.id].dato}`})}
+  const fotos=hechas.filter(x=>x.foto);
+  if(fotos.length){s+=`\n\n📸 *Mandar foto de:* ${fotos.map(x=>x.fotoNombre||x.texto.split(/[:(,]/)[0].trim().toLowerCase()).join(", ")}`}
+  return s;
+}
+
+/* ---------- vistas ---------- */
+function ultimaFecha(dia){const d=diaOp(0);const diff=(d.getDay()-dia+7)%7;d.setDate(d.getDate()-diff);return d}
+function vHome(){
+  const hoy=diaOp(0);const sel=S.diaSel??hoy.getDay();const esHoy=sel===hoy.getDay();
+  const fUlt=ultimaFecha(sel);
+  const dias=[1,2,3,4,5,6,0].map(d=>`<button class="daychip ${d===sel?"on":""}" data-act="dia" data-v="${d}" aria-pressed="${d===sel}"><span>${DIAS_C[d]}</span>${d===hoy.getDay()?`<i>hoy</i>`:""}</button>`).join("");
+  const card=(t,ro)=>{const n=(t.tareas||[]).length;
+    return `<button class="tcard" data-act="${ro?"ver":"abrir"}" data-id="${t.id}">
+      <span class="chip f-${t.formato}">${FORMATOS[t.formato]}</span>
+      <span class="who">${esc(t.persona)}</span>
+      <span class="hrs">${esc(t.nombre)} · ${esc(t.horario)}</span>
+      <span class="state">${n?n+" tareas":"Sin tareas cargadas"}${ro?" · ver":""}</span></button>`};
+  const ts=turnosDelDia(sel);
+  return `
+  ${S.loadNote?`<div class="note">${esc(S.loadNote)}</div>`:""}
+  <section class="stack"><h1>¿Qué turno arrancás?</h1>
+    <p class="muted small" style="margin:0">Tocá tu turno, tildá cada tarea cuando la termines y al final cerrá el turno para mandar el resumen al grupo.</p></section>
+  <div class="days">${dias}</div>
+  <section class="stack"><h2>${esHoy?"Hoy · ":""}${DIAS[sel]}${esHoy?` ${hoy.getDate()}/${hoy.getMonth()+1}`:""}</h2>
+    ${esHoy?"":`<p class="muted small" style="margin:0">Podés ver la lista de cada turno y cómo quedó el ${DIAS[sel].toLowerCase()} ${fUlt.getDate()}/${fUlt.getMonth()+1}. Solo se tilda el día del turno.</p>`}
+    ${ts.length?`<div class="turnos">${ts.map(t=>card(t,!esHoy)).join("")}</div>`:`<div class="empty">${S.loaded?"No hay turnos cargados para este día.":"Cargando turnos…"}</div>`}</section>
+  <footer><button class="btn ghost small" data-act="adminLogin">Administrar tareas</button></footer>`;
+}
+function reglaSoporte(t){
+  if(t.formato==="turno8")return "";
+  return `<div class="rule">${ICON_PHONE}<div><strong>NADA DE CELULAR</strong>
+    <p>En el soporte el celular queda guardado. Si está tranquilo, seguí con la lista; si no queda nada, preguntá al encargado qué hacer.</p>
+    ${t.formato==="soporte"?`<p>Esta lista se carga el día anterior: revisala antes de venir.</p>`:""}</div></div>`;
+}
+
+function vLista(){
+  const t=turno(S.turnoId);if(!t)return `<div class="empty">Ese turno ya no existe.</div>`;
+  const tareas=t.tareas||[];const ro=S.readonly;
+  const hechas=tareas.filter(x=>S.reg.items[x.id]?.hecho).length;
+  const pct=tareas.length?Math.round(hechas/tareas.length*100):0;
+  const bloques=bloquesDe(t).map(b=>`<section class="block"><h2>${esc(b)}</h2>${tareas.filter(x=>x.bloque===b).map(x=>{
+      const it=S.reg.items[x.id]||{};
+      let campo="";
+      if(x.campo){campo=x.campo.tipo==="opciones"
+        ?`<div class="field"><label>${esc(x.campo.label)}</label><div class="opts">${(x.campo.opciones||[]).map(o=>`<button class="opt ${it.dato===o?"on":""}" data-act="opt" data-id="${x.id}" data-v="${esc(o)}" ${ro?"disabled":""}>${esc(o)}</button>`).join("")}</div></div>`
+        :`<div class="field"><label for="d_${x.id}">${esc(x.campo.label)}</label><input type="text" id="d_${x.id}" data-dato="${x.id}" value="${esc(it.dato||"")}" ${ro?"disabled":""}></div>`}
+      return `<div class="task ${it.hecho?"done":""}">
+        <button class="cb" data-act="tic" data-id="${x.id}" aria-pressed="${!!it.hecho}" aria-label="Marcar hecha" ${ro?"disabled":""}>${ICON_CHECK}</button>
+        <div class="txt"><span class="tt">${esc(x.texto)}</span>
+          ${(x.foto||it.hora)?`<div class="meta">${x.foto?`<span class="chip">${ICON_CAM} Foto al grupo</span>`:""}${it.hora?`<span class="hora">Hecha ${it.hora}</span>`:""}</div>`:""}
+          ${ro&&!it.hecho&&it.motivo?`<span class="err">No se hizo: ${esc(it.motivo)}${it.comentario?` (${esc(it.comentario)})`:""}</span>`:""}
+          ${campo}</div></div>`}).join("")}</section>`).join("");
+  return `<button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button>
+  <section class="stack">
+    <div class="row"><span class="chip f-${t.formato}">${FORMATOS[t.formato]}</span><span class="muted small">${esc(t.nombre)} · ${esc(t.horario)}</span></div>
+    <h1>${esc(t.persona)}${ro?` · ${DIAS[t.dia]}`:""}</h1>
+    ${ro?(S.regExiste?`<div class="note">Así quedó el ${esc(S.reg.fechaTxt)}${S.reg.cerrado?` · cerrado ${esc(S.reg.cerradoHora)}`:" · no se cerró el turno"}. Solo lectura.</div>`
+      :`<div class="note">Vista de la lista. No hay registro del ${esc(S.reg.fechaTxt)}. Se tilda el día del turno.</div>`):""}
+  </section>
+  ${reglaSoporte(t)}
+  ${tareas.length?`${ro&&!S.regExiste?"":`<div class="prog"><div class="bar"><i style="width:${pct}%"></i></div><b>${hechas}/${tareas.length}</b></div>`}
+    ${bloques}
+    ${ro?"":`<button class="btn primary big" data-act="cierre">Cerrar turno</button>`}`
+  :`<div class="empty">Todavía no hay tareas cargadas para este turno.<br>Se cargan desde “Administrar tareas”.</div>`}`;
+}
+
+function vCierre(){
+  const t=turno(S.turnoId);const tareas=t.tareas||[];
+  const no=tareas.filter(x=>!S.reg.items[x.id]?.hecho);
+  const faltaDato=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.hecho&&!S.reg.items[x.id]?.dato);
+  return `<button class="btn ghost back" data-act="lista">${ICON_BACK} Volver a la lista</button>
+  <section class="stack"><h1>Cerrar turno</h1>
+  <p class="muted" style="margin:0">${no.length?`Quedaron ${no.length} tareas sin hacer. Elegí por qué no se hizo cada una.`:"Hiciste todas las tareas."}</p></section>
+  ${no.map(x=>{const it=S.reg.items[x.id]||{};return `<div class="pend"><span class="tt">${esc(x.texto)}</span>
+    <div class="field"><label for="m_${x.id}">¿Por qué no se hizo?</label>
+    <select id="m_${x.id}" data-motivo="${x.id}"><option value="">Elegí un motivo</option>${MOTIVOS.map(m=>`<option ${it.motivo===m?"selected":""}>${esc(m)}</option>`).join("")}</select></div>
+    <div class="field"><label for="c_${x.id}">Comentario (opcional)</label><input type="text" id="c_${x.id}" data-coment="${x.id}" value="${esc(it.comentario||"")}"></div>
+    ${S.cierreErr&&!it.motivo?`<span class="err">Falta elegir el motivo.</span>`:""}</div>`}).join("")}
+  ${faltaDato.length?`<div class="note">Falta completar: ${faltaDato.map(x=>esc(x.campo.label)).join(", ")}. Volvé a la lista para cargarlo.</div>`:""}
+  <button class="btn primary big" data-act="cerrar">Cerrar y armar resumen</button>`;
+}
+
+function vResumen(){
+  const txt=resumenTexto();
+  return `<button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button>
+  <section class="stack"><span class="chip ok">Turno cerrado</span><h1>Resumen para el grupo</h1>
+  <p class="muted small" style="margin:0">Copialo y pegalo en el grupo de WhatsApp del kiosco, o abrí WhatsApp y elegí el grupo.</p></section>
+  <div class="summary" id="sumtxt">${esc(txt)}</div>
+  <div class="row">
+    <button class="btn yellow" data-act="copiar">Copiar resumen</button>
+    <a class="btn" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener" style="text-decoration:none">Abrir WhatsApp</a>
+    <button class="btn ghost" data-act="reabrir">Corregir algo</button>
+  </div>`;
+}
+
+function vLogin(){
+  return `<button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button>
+  <section class="stack"><h1>Administrar tareas</h1><p class="muted" style="margin:0">Ingresá el código de administración.</p></section>
+  <form class="form" id="loginF"><input class="inp code" id="codeIn" type="password" inputmode="numeric" autocomplete="off" aria-label="Código">
+  ${S.loginErr?`<span class="err">${esc(S.loginErr)}</span>`:""}
+  <button class="btn primary big" type="submit">Entrar</button></form>`;
+}
+
+function vAdmin(){
+  const tabs=`<div class="tabs">${[["tareas","Tareas"],["historial","Historial"],["codigo","Código"]].map(([k,l])=>`<button class="tab ${S.aTab===k?"on":""}" data-act="atab" data-v="${k}">${l}</button>`).join("")}</div>`;
+  let body="";
+  if(S.aTab==="tareas")body=vAdminTareas();
+  if(S.aTab==="historial")body=vAdminHist();
+  if(S.aTab==="codigo")body=`<form class="form" id="codeF"><h2>Cambiar código</h2>
+    <div class="field"><label for="nc1">Código nuevo (mínimo 4 números)</label><input class="inp" id="nc1" type="password" inputmode="numeric" autocomplete="off"></div>
+    <div class="field"><label for="nc2">Repetilo</label><input class="inp" id="nc2" type="password" inputmode="numeric" autocomplete="off"></div>
+    <button class="btn primary" type="submit">Guardar código</button></form>`;
+  return `<div class="row" style="justify-content:space-between"><button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button><button class="btn ghost small" data-act="salir">Salir de administrar</button></div>
+  <h1>Administrar</h1>${tabs}${body}`;
+}
+
+function vAdminTareas(){
+  const sel=`<div class="field"><label for="aSel">Turno</label><select class="inp" id="aSel">${[1,2,3,4,5,6,0].map(d=>`<optgroup label="${DIAS[d]}">${turnosDelDia(d).map(t=>`<option value="${t.id}" ${S.aTurno===t.id?"selected":""}>${esc(t.persona)} · ${esc(t.nombre)} ${esc(t.horario)} · ${FORMATOS[t.formato]}</option>`).join("")}</optgroup>`).join("")}</select></div>`;
+  const t=turno(S.aTurno);if(!t)return sel;
+  const tareas=t.tareas||[];const bloques=bloquesDe(t);const todos=[...new Set([...(t.bloques||[]),...bloques])];
+  const lista=bloques.map(b=>`<section class="block"><h2>${esc(b)}</h2>${tareas.filter(x=>x.bloque===b).map(x=>`<div class="adm-task">
+      <div class="tt"><div>${esc(x.texto)}</div><div class="meta">${x.foto?`<span class="chip">${ICON_CAM} Foto</span>`:""}${x.campo?`<span class="chip">Dato: ${esc(x.campo.label)}</span>`:""}</div></div>
+      ${S.aConfirm===x.id?`<div class="confirm"><span>¿Eliminar?</span><button class="btn primary" data-act="delOk" data-id="${x.id}">Sí</button><button class="btn" data-act="delNo">No</button></div>`
+      :`<div class="icons"><button class="ib" data-act="up" data-id="${x.id}" aria-label="Subir">${ICON_UP}</button><button class="ib" data-act="down" data-id="${x.id}" aria-label="Bajar">${ICON_DOWN}</button><button class="ib danger" data-act="del" data-id="${x.id}" aria-label="Eliminar">${ICON_DEL}</button></div>`}
+    </div>`).join("")}</section>`).join("");
+  return `${sel}
+  <div class="row"><span class="chip f-${t.formato}">${FORMATOS[t.formato]}</span><span class="muted small">${tareas.length} tareas</span></div>
+  ${tareas.length?lista:`<div class="empty">Este turno no tiene tareas todavía. Agregá la primera abajo.</div>`}
+  <form class="form" id="addF"><h2>Agregar tarea</h2>
+    <div class="field"><label for="nTxt">Tarea</label><textarea id="nTxt" rows="2" placeholder="Ej: Reponer la heladera de bebidas hasta completar las filas"></textarea></div>
+    <div class="two">
+      <div class="field"><label for="nBloque">Bloque</label><select class="inp" id="nBloque">${todos.map(b=>`<option>${esc(b)}</option>`).join("")}<option value="__nuevo" ${S.aBloqueNuevo?"selected":""}>+ Bloque nuevo…</option></select></div>
+      <div class="field" ${S.aBloqueNuevo||!todos.length?"":"hidden"} id="nbWrap"><label for="nBloqueNom">Nombre del bloque nuevo</label><input class="inp" id="nBloqueNom" type="text" placeholder="Ej: Apertura"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="nFoto"> Pedir foto al grupo</label>
+    <div class="two">
+      <div class="field"><label for="nCampo">Pedir un dato</label><select class="inp" id="nCampo">
+        <option value="ninguno" ${S.aCampo==="ninguno"?"selected":""}>No</option><option value="texto" ${S.aCampo==="texto"?"selected":""}>Sí, que escriban</option><option value="opciones" ${S.aCampo==="opciones"?"selected":""}>Sí, que elijan una opción</option></select></div>
+      <div class="field" ${S.aCampo==="ninguno"?"hidden":""}><label for="nCampoLbl">Pregunta</label><input class="inp" id="nCampoLbl" type="text" placeholder="Ej: ¿Cuántos huevos quedan?"></div>
+    </div>
+    <div class="field" ${S.aCampo==="opciones"?"":"hidden"}><label for="nOpts">Opciones separadas por coma</label><input class="inp" id="nOpts" type="text" placeholder="Descongeló bien, Le falta"></div>
+    <button class="btn primary" type="submit" ${S.busy?"disabled":""}>Agregar tarea</button></form>`;
+}
+
+function vAdminHist(){
+  if(!S.hist)return `<div class="empty">Cargando historial…</div>`;
+  if(!S.hist.length)return `<div class="empty">Todavía no hay turnos registrados. Van a aparecer acá a medida que los chicos completen sus listas.</div>`;
+  const cnt={};S.hist.forEach(r=>Object.values(r.items||{}).forEach(i=>{if(!i.hecho&&i.motivo)cnt[i.motivo]=(cnt[i.motivo]||0)+1}));
+  const tot=Object.values(cnt).reduce((a,b)=>a+b,0);const max=Math.max(1,...Object.values(cnt));
+  const mot=tot?`<section class="stack"><h2>Por qué no se hacen las tareas</h2>${Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`<div class="motbar"><span>${esc(m)}</span><span class="b"><i style="width:${n/max*100}%"></i></span><span>${n}</span></div>`).join("")}</section>`:"";
+  return `${mot}<section class="stack"><h2>Últimos turnos</h2>${S.hist.map(r=>{const open=S.histOpen===r.id;const snap=r.tareasSnapshot||[];
+    const no=snap.filter(x=>!r.items?.[x.id]?.hecho);const pct=r.total?r.hechas/r.total:0;
+    const horas=snap.map(x=>r.items?.[x.id]?.hora).filter(Boolean);
+    return `<button class="hist" data-act="hist" data-id="${esc(r.id)}">
+      <div class="top"><strong>${esc(r.persona)} · ${esc(r.turnoNombre)}</strong><span class="muted small">${esc(r.fechaTxt||r.fecha)}</span></div>
+      <div class="row"><span class="chip ${pct===1?"ok":pct>=.7?"":"warn"}">${r.hechas||0}/${r.total||0} hechas</span><span class="chip ${r.cerrado?"ok":"warn"}">${r.cerrado?"Cerrado "+esc(r.cerradoHora):"Sin cerrar"}</span></div>
+      ${open?`<div class="det">${horas.length?`<span class="muted">Tildes entre ${horas.sort()[0]} y ${horas.sort().slice(-1)[0]}</span>`:""}
+        ${no.length?no.map(x=>{const i=r.items?.[x.id]||{};return `<span>❌ ${esc(x.texto)} → <b>${esc(i.motivo||"sin motivo")}</b>${i.comentario?` (${esc(i.comentario)})`:""}</span>`}).join(""):"<span>Todas hechas.</span>"}
+        ${snap.filter(x=>x.campo&&r.items?.[x.id]?.dato).map(x=>`<span>📋 ${esc(x.campo)}: ${esc(r.items[x.id].dato)}</span>`).join("")}</div>`:""}
+    </button>`}).join("")}</section>`;
+}
+
+function render(){
+  const v={home:vHome,lista:vLista,cierre:vCierre,resumen:vResumen,adminLogin:vLogin,admin:vAdmin}[S.view]||vHome;
+  $app.innerHTML=v();
+  if(S.view==="adminLogin")document.getElementById("codeIn")?.focus();
+}
+
+/* ---------- acciones ---------- */
+async function _unused(s){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("kb:"+s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+
+async function guardarTurno(t){
+  S.busy=true;
+  try{await rpc("guardar_turno",{p_codigo:S.code,p_id:t.id,p_bloques:t.bloques||[],p_tareas:t.tareas||[]});
+    S.busy=false;const i=S.turnos.findIndex(x=>x.id===t.id);if(i>=0)S.turnos[i]=t;render();return true}
+  catch(e){S.busy=false;if(/codigo_incorrecto/.test(e.msg)){S.admin=false;S.view="adminLogin";S.loginErr="El código cambió. Ingresalo de nuevo.";render()}else toast("No se pudo guardar. Probá de nuevo.");return false}
+}
+async function cargarHist(){
+  S.hist=null;render();
+  try{const rows=await api("registros?select=id,data&order=actualizado.desc&limit=60");S.hist=rows.map(r=>({...r.data,id:r.id}))}
+  catch(e){S.hist=[];toast("No se pudo cargar el historial.")}
+  if(S.view==="admin"&&S.aTab==="historial")render();
+}
+
+$app.addEventListener("click",async e=>{
+  const b=e.target.closest("[data-act]");if(!b)return;
+  const a=b.dataset.act,id=b.dataset.id;
+  if(a==="home"){S.view="home";render();window.scrollTo(0,0)}
+  else if(a==="dia"){S.diaSel=+b.dataset.v;render()}
+  else if(a==="abrir")abrirTurno(id,false);
+  else if(a==="ver")abrirTurno(id,true);
+  else if(a==="lista"){S.view="lista";render()}
+  else if(a==="tic"){const it=item(id);it.hecho=!it.hecho;it.hora=it.hecho?horaAhora():"";if(it.hecho){it.motivo="";it.comentario=""}saveReg();render()}
+  else if(a==="opt"){const it=item(id);it.dato=b.dataset.v;saveReg();render()}
+  else if(a==="cierre"){S.view="cierre";S.cierreErr=false;render();window.scrollTo(0,0)}
+  else if(a==="cerrar"){
+    const t=turno(S.turnoId);const no=(t.tareas||[]).filter(x=>!S.reg.items[x.id]?.hecho);
+    if(no.some(x=>!S.reg.items[x.id]?.motivo)){S.cierreErr=true;render();toast("Elegí el motivo de cada tarea sin hacer.");return}
+    S.reg.cerrado=true;S.reg.cerradoHora=horaAhora();saveReg();S.view="resumen";render();window.scrollTo(0,0)}
+  else if(a==="reabrir"){S.reg.cerrado=false;S.reg.cerradoHora="";saveReg();S.view="lista";render()}
+  else if(a==="copiar"){const txt=resumenTexto();
+    try{await navigator.clipboard.writeText(txt);toast("Resumen copiado")}
+    catch(_){const r=document.createRange();r.selectNodeContents(document.getElementById("sumtxt"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Texto seleccionado: copialo con el menú")}}
+  else if(a==="adminLogin"){S.loginErr="";S.view=S.admin?"admin":"adminLogin";if(S.admin&&!S.aTurno)S.aTurno=S.turnos[0]?.id;render()}
+  else if(a==="salir"){S.admin=false;S.view="home";render()}
+  else if(a==="atab"){S.aTab=b.dataset.v;S.aConfirm=null;if(S.aTab==="historial")cargarHist();render()}
+  else if(a==="del"){S.aConfirm=id;render()}
+  else if(a==="delNo"){S.aConfirm=null;render()}
+  else if(a==="delOk"){const t=clone(turno(S.aTurno));t.tareas=t.tareas.filter(x=>x.id!==id);S.aConfirm=null;if(await guardarTurno(t))toast("Tarea eliminada")}
+  else if(a==="up"||a==="down"){const t=clone(turno(S.aTurno));const arr=t.tareas;const i=arr.findIndex(x=>x.id===id);const bl=arr[i].bloque;
+    let j=i;do{j+=a==="up"?-1:1}while(j>=0&&j<arr.length&&arr[j].bloque!==bl);
+    if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];await guardarTurno(t)}
+  else if(a==="hist"){S.histOpen=S.histOpen===id?null:id;render()}
+});
+
+$app.addEventListener("input",e=>{
+  const el=e.target;
+  if(el.dataset.dato){item(el.dataset.dato).dato=el.value;saveReg()}
+  else if(el.dataset.coment){item(el.dataset.coment).comentario=el.value;saveReg()}
+});
+$app.addEventListener("change",e=>{
+  const el=e.target;
+  if(el.dataset.motivo){item(el.dataset.motivo).motivo=el.value;saveReg();if(S.cierreErr)render()}
+  else if(el.id==="aSel"){S.aTurno=el.value;S.aConfirm=null;render()}
+  else if(el.id==="nBloque"){S.aBloqueNuevo=el.value==="__nuevo";document.getElementById("nbWrap").hidden=!S.aBloqueNuevo}
+  else if(el.id==="nCampo"){const txt=document.getElementById("nTxt").value;S.aCampo=el.value;render();document.getElementById("nTxt").value=txt}
+});
+$app.addEventListener("submit",async e=>{
+  e.preventDefault();const f=e.target;
+  if(f.id==="loginF"){const v=document.getElementById("codeIn").value.trim();if(!v)return;
+    try{const ok=await rpc("verificar_codigo",{p_codigo:v});
+      if(ok===true){S.code=v;S.admin=true;S.view="admin";S.aTab="tareas";S.aTurno=S.aTurno||turnosDelDia(1)[0]?.id||S.turnos[0]?.id;render()}
+      else{S.loginErr="Código incorrecto.";render()}}
+    catch(_){S.loginErr="No se pudo verificar el código. Revisá la conexión.";render()}}
+  else if(f.id==="addF"){
+    const texto=document.getElementById("nTxt").value.trim();if(!texto){toast("Escribí la tarea.");return}
+    const t=clone(turno(S.aTurno));t.tareas=t.tareas||[];t.bloques=t.bloques||[];
+    let bloque=document.getElementById("nBloque").value;
+    if(bloque==="__nuevo"||!bloque){bloque=(document.getElementById("nBloqueNom")?.value||"").trim();if(!bloque){toast("Poné el nombre del bloque.");return}}
+    if(!t.bloques.includes(bloque))t.bloques.push(bloque);
+    const nt={id:uid(),texto,bloque,foto:document.getElementById("nFoto").checked};
+    const ct=document.getElementById("nCampo").value;
+    if(ct!=="ninguno"){const label=(document.getElementById("nCampoLbl")?.value||"").trim();if(!label){toast("Escribí la pregunta del dato.");return}
+      nt.campo={tipo:ct,label};if(ct==="opciones"){nt.campo.opciones=(document.getElementById("nOpts").value||"").split(",").map(s=>s.trim()).filter(Boolean);if(nt.campo.opciones.length<2){toast("Poné al menos 2 opciones.");return}}}
+    const idx=t.tareas.map(x=>x.bloque).lastIndexOf(bloque);
+    if(idx>=0)t.tareas.splice(idx+1,0,nt);else t.tareas.push(nt);
+    S.aBloqueNuevo=false;S.aCampo="ninguno";
+    if(await guardarTurno(t)){toast("Tarea agregada");}}
+  else if(f.id==="codeF"){const a=document.getElementById("nc1").value.trim(),b=document.getElementById("nc2").value.trim();
+    if(!/^\d{4,}$/.test(a)){toast("El código tiene que tener al menos 4 números.");return}
+    if(a!==b){toast("Los códigos no coinciden.");return}
+    try{await rpc("cambiar_codigo",{p_actual:S.code,p_nuevo:a});S.code=a;toast("Código actualizado");f.reset()}catch(_){toast("No se pudo guardar el código.")}}
+});
+
+/* ---------- inicio ---------- */
+(function(){const d=diaOp(0);document.getElementById("hdate").textContent=`${DIAS[d.getDay()]} ${d.getDate()}/${d.getMonth()+1}`})();
+render();
+let cargando=false;
+async function cargarTurnos(primera){
+  if(cargando)return;cargando=true;
+  const timer=primera?setTimeout(()=>{if(!S.loaded){S.loadNote="La lista está tardando en cargar. Revisá la conexión a internet.";render()}},10000):null;
+  try{const rows=await api("turnos?select=*");
+    S.turnos=rows.map(r=>({id:r.id,dia:r.dia,persona:r.persona,nombre:r.nombre,horario:r.horario,formato:r.formato,inicio:r.inicio,bloques:r.bloques||[],tareas:r.tareas||[]}));
+    S.loaded=true;S.loadNote="";
+    const typing=document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+    if(S.view==="home"||(!typing&&S.view!=="admin"))render();}
+  catch(e){S.loaded=true;if(primera){S.loadNote="No se pudo cargar la lista de turnos. Revisá la conexión a internet.";render()}}
+  if(timer)clearTimeout(timer);cargando=false;
+}
+cargarTurnos(true);
+setInterval(()=>{if(document.visibilityState==="visible")cargarTurnos(false)},120000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")cargarTurnos(false)});
+</script>
+
+</body>
+</html>
