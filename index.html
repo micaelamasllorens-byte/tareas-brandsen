@@ -153,6 +153,13 @@ h2{font-family:var(--f-label);font-weight:400;font-size:17px;letter-spacing:.07e
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600}
 footer{display:flex;justify-content:center}
+.linkbtn{align-self:flex-start;background:none;border:0;padding:2px 0;color:var(--warn);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.nohice{background:var(--warn-soft);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.nohice select,.nohice input{background:var(--surface)}
+.endbar{position:sticky;bottom:0;z-index:5;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px))) -48px;background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.endbar .endin{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(16px,env(safe-area-inset-left,0px))}
+.endbar b{font-family:var(--f-label);font-weight:400;font-size:20px;font-variant-numeric:tabular-nums}
+.btn.wa{background:#1f9d55;border-color:#1f9d55;color:#fff;text-align:center;text-decoration:none;display:block}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -188,7 +195,7 @@ async function api(path,{method="GET",body,prefer}={}){
   return data;
 }
 const rpc=(fn,args)=>api("rpc/"+fn,{method:"POST",body:args});
-const S={db:true,code:"",turnos:[],loaded:false,loadNote:"",view:"home",turnoId:null,reg:null,readonly:false,
+const S={db:true,code:"",motOpen:new Set(),turnos:[],loaded:false,loadNote:"",view:"home",turnoId:null,reg:null,readonly:false,
   cierreErr:false,admin:false,aTab:"tareas",aTurno:null,aConfirm:null,aBloqueNuevo:false,aCampo:"ninguno",hist:null,histOpen:null,loginErr:"",busy:false};
 
 const $app=document.getElementById("app");
@@ -297,18 +304,23 @@ function vLista(){
         <div class="txt"><span class="tt">${esc(x.texto)}</span>
           ${(x.foto||it.hora)?`<div class="meta">${x.foto?`<span class="chip">${ICON_CAM} Foto al grupo</span>`:""}${it.hora?`<span class="hora">Hecha ${it.hora}</span>`:""}</div>`:""}
           ${ro&&!it.hecho&&it.motivo?`<span class="err">No se hizo: ${esc(it.motivo)}${it.comentario?` (${esc(it.comentario)})`:""}</span>`:""}
+          ${!ro&&!it.hecho?((it.motivo||S.motOpen.has(x.id))?`<div class="nohice">
+              <div class="field"><label for="m_${x.id}">¿Por qué no se pudo hacer?</label>
+              <select id="m_${x.id}" data-motivo="${x.id}"><option value="">Elegí un motivo</option>${MOTIVOS.map(m=>`<option ${it.motivo===m?"selected":""}>${esc(m)}</option>`).join("")}</select></div>
+              <div class="field"><label for="c_${x.id}">Comentario (opcional)</label><input type="text" id="c_${x.id}" data-coment="${x.id}" value="${esc(it.comentario||"")}"></div></div>`
+            :`<button class="linkbtn" data-act="nohice" data-id="${x.id}">No la pude hacer</button>`):""}
           ${campo}</div></div>`}).join("")}</section>`).join("");
   return `<button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button>
   <section class="stack">
     <div class="row"><span class="chip f-${t.formato}">${FORMATOS[t.formato]}</span><span class="muted small">${esc(t.nombre)} · ${esc(t.horario)}</span></div>
     <h1>${esc(t.persona)}${ro?` · ${DIAS[t.dia]}`:""}</h1>
     ${ro?(S.regExiste?`<div class="note">Así quedó el ${esc(S.reg.fechaTxt)}${S.reg.cerrado?` · cerrado ${esc(S.reg.cerradoHora)}`:" · no se cerró el turno"}. Solo lectura.</div>`
-      :`<div class="note">Vista de la lista. No hay registro del ${esc(S.reg.fechaTxt)}. Se tilda el día del turno.</div>`):""}
+      :`<div class="note">Esta lista es del ${DIAS[t.dia].toLowerCase()}. Solo se puede tildar el día del turno (hoy es ${DIAS[diaOp(0).getDay()].toLowerCase()}).</div>`):""}
   </section>
   ${reglaSoporte(t)}
   ${tareas.length?`${ro&&!S.regExiste?"":`<div class="prog"><div class="bar"><i style="width:${pct}%"></i></div><b>${hechas}/${tareas.length}</b></div>`}
     ${bloques}
-    ${ro?"":`<button class="btn primary big" data-act="cierre">Cerrar turno</button>`}`
+    ${ro?"":`<div class="endbar"><div class="endin"><span><b>${hechas}/${tareas.length}</b> hechas</span><button class="btn primary" data-act="cierre">Terminar turno y enviar</button></div></div>`}`
   :`<div class="empty">Todavía no hay tareas cargadas para este turno.<br>Se cargan desde “Administrar tareas”.</div>`}`;
 }
 
@@ -317,7 +329,7 @@ function vCierre(){
   const no=tareas.filter(x=>!S.reg.items[x.id]?.hecho);
   const faltaDato=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.hecho&&!S.reg.items[x.id]?.dato);
   return `<button class="btn ghost back" data-act="lista">${ICON_BACK} Volver a la lista</button>
-  <section class="stack"><h1>Cerrar turno</h1>
+  <section class="stack"><h1>Terminar turno</h1>
   <p class="muted" style="margin:0">${no.length?`Quedaron ${no.length} tareas sin hacer. Elegí por qué no se hizo cada una.`:"Hiciste todas las tareas."}</p></section>
   ${no.map(x=>{const it=S.reg.items[x.id]||{};return `<div class="pend"><span class="tt">${esc(x.texto)}</span>
     <div class="field"><label for="m_${x.id}">¿Por qué no se hizo?</label>
@@ -325,18 +337,18 @@ function vCierre(){
     <div class="field"><label for="c_${x.id}">Comentario (opcional)</label><input type="text" id="c_${x.id}" data-coment="${x.id}" value="${esc(it.comentario||"")}"></div>
     ${S.cierreErr&&!it.motivo?`<span class="err">Falta elegir el motivo.</span>`:""}</div>`}).join("")}
   ${faltaDato.length?`<div class="note">Falta completar: ${faltaDato.map(x=>esc(x.campo.label)).join(", ")}. Volvé a la lista para cargarlo.</div>`:""}
-  <button class="btn primary big" data-act="cerrar">Cerrar y armar resumen</button>`;
+  <button class="btn primary big" data-act="cerrar">Terminar y armar resumen</button>`;
 }
 
 function vResumen(){
   const txt=resumenTexto();
   return `<button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button>
-  <section class="stack"><span class="chip ok">Turno cerrado</span><h1>Resumen para el grupo</h1>
-  <p class="muted small" style="margin:0">Copialo y pegalo en el grupo de WhatsApp del kiosco, o abrí WhatsApp y elegí el grupo.</p></section>
+  <section class="stack"><span class="chip ok">Turno cerrado</span><h1>Mandá tu resumen</h1>
+  <p class="muted" style="margin:0">Tocá <b>Enviar por WhatsApp</b> y elegí el grupo del kiosco o el chat de Mica. Si no se abre WhatsApp, tocá <b>Copiar</b> y pegalo en el chat.</p></section>
   <div class="summary" id="sumtxt">${esc(txt)}</div>
+  <a class="btn wa big" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener">Enviar por WhatsApp</a>
   <div class="row">
     <button class="btn yellow" data-act="copiar">Copiar resumen</button>
-    <a class="btn" href="https://wa.me/?text=${encodeURIComponent(txt)}" target="_blank" rel="noopener" style="text-decoration:none">Abrir WhatsApp</a>
     <button class="btn ghost" data-act="reabrir">Corregir algo</button>
   </div>`;
 }
@@ -438,7 +450,8 @@ $app.addEventListener("click",async e=>{
   else if(a==="abrir")abrirTurno(id,false);
   else if(a==="ver")abrirTurno(id,true);
   else if(a==="lista"){S.view="lista";render()}
-  else if(a==="tic"){const it=item(id);it.hecho=!it.hecho;it.hora=it.hecho?horaAhora():"";if(it.hecho){it.motivo="";it.comentario=""}saveReg();render()}
+  else if(a==="nohice"){S.motOpen.add(id);render();document.getElementById("m_"+id)?.focus()}
+  else if(a==="tic"){S.motOpen.delete(id);const it=item(id);it.hecho=!it.hecho;it.hora=it.hecho?horaAhora():"";if(it.hecho){it.motivo="";it.comentario=""}saveReg();render()}
   else if(a==="opt"){const it=item(id);it.dato=b.dataset.v;saveReg();render()}
   else if(a==="cierre"){S.view="cierre";S.cierreErr=false;render();window.scrollTo(0,0)}
   else if(a==="cerrar"){
@@ -468,7 +481,7 @@ $app.addEventListener("input",e=>{
 });
 $app.addEventListener("change",e=>{
   const el=e.target;
-  if(el.dataset.motivo){item(el.dataset.motivo).motivo=el.value;saveReg();if(S.cierreErr)render()}
+  if(el.dataset.motivo){item(el.dataset.motivo).motivo=el.value;saveReg();render()}
   else if(el.id==="aSel"){S.aTurno=el.value;S.aConfirm=null;render()}
   else if(el.id==="nBloque"){S.aBloqueNuevo=el.value==="__nuevo";document.getElementById("nbWrap").hidden=!S.aBloqueNuevo}
   else if(el.id==="nCampo"){const txt=document.getElementById("nTxt").value;S.aCampo=el.value;render();document.getElementById("nTxt").value=txt}
