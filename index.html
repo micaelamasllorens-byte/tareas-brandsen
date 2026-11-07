@@ -452,7 +452,7 @@ async function guardarTurno(t){
 }
 async function cargarHist(){
   S.hist=null;render();
-  try{const rows=await api("registros?select=id,data&order=actualizado.desc&limit=60");S.hist=rows.map(r=>({...r.data,id:r.id}))}
+  try{const rows=await api("registros?select=id,data&order=actualizado.desc&limit=60");S.hist=rows.map(r=>({...r.data,id:r.id})).filter(r=>r.cerrado||Object.values(r.items||{}).some(i=>i.hecho||i.motivo))}
   catch(e){S.hist=[];toast("No se pudo cargar el historial.")}
   if(S.view==="admin"&&S.aTab==="historial")render();
 }
