@@ -235,8 +235,8 @@ function item(id){if(!S.reg.items[id])S.reg.items[id]={hecho:false,hora:"",motiv
 
 async function abrirTurno(id,readonly){
   const t=turno(id);if(!t)return;
-  S.turnoId=id;S.readonly=!!readonly;S.cierreErr=false;
-  const d=readonly?ultimaFecha(t.dia):diaOp(0);const key=fechaKey(d)+"_"+id;
+  S.turnoId=id;S.readonly=false;S.cierreErr=false;
+  const d=diaOp(0);const key=fechaKey(d)+"_"+id;
   S.reg={id:key,fecha:fechaKey(d),fechaTxt:fechaCorta(d),turnoId:id,turnoNombre:t.nombre,persona:t.persona,formato:t.formato,items:{},cerrado:false,cerradoHora:""};
   S.regExiste=false;S.view="lista";render();window.scrollTo(0,0);
   if(!S.db)return;
@@ -250,7 +250,8 @@ function resumenTexto(){
   const t=turno(S.reg.turnoId);const tareas=t?.tareas||[];
   const hechas=tareas.filter(x=>S.reg.items[x.id]?.hecho);
   const no=tareas.filter(x=>!S.reg.items[x.id]?.hecho);
-  let s=`✅ *${t.nombre} – ${t.persona}* · ${S.reg.fechaTxt}\n${FORMATOS[t.formato]} · ${t.horario}\nHechas: ${hechas.length}/${tareas.length}`;
+  const otroDia=t.dia!==diaOp(0).getDay()?` (lista del ${DIAS[t.dia].toLowerCase()})`:"";
+  let s=`✅ *${t.nombre} – ${t.persona}* · ${S.reg.fechaTxt}${otroDia}\n${FORMATOS[t.formato]} · ${t.horario}\nHechas: ${hechas.length}/${tareas.length}`;
   if(S.reg.cerradoHora)s+=` · Cerrado ${S.reg.cerradoHora}`;
   if(no.length){s+=`\n\n❌ *No hechas*`;no.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
   const datos=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.dato);
@@ -279,8 +280,8 @@ function vHome(){
     <p class="muted small" style="margin:0">Tocá tu turno, tildá cada tarea cuando la termines y al final cerrá el turno para mandar el resumen al grupo.</p></section>
   <div class="days">${dias}</div>
   <section class="stack"><h2>${esHoy?"Hoy · ":""}${DIAS[sel]}${esHoy?` ${hoy.getDate()}/${hoy.getMonth()+1}`:""}</h2>
-    ${esHoy?"":`<p class="muted small" style="margin:0">Podés ver la lista de cada turno y cómo quedó el ${DIAS[sel].toLowerCase()} ${fUlt.getDate()}/${fUlt.getMonth()+1}. Solo se tilda el día del turno.</p>`}
-    ${ts.length?`<div class="turnos">${ts.map(t=>card(t,!esHoy)).join("")}</div>`:`<div class="empty">${S.loaded?"No hay turnos cargados para este día.":"Cargando turnos…"}</div>`}</section>
+    ${esHoy?"":`<p class="muted small" style="margin:0">Lo que tildes queda registrado con la fecha de hoy, aclarando que es la lista del ${DIAS[sel].toLowerCase()}.</p>`}
+    ${ts.length?`<div class="turnos">${ts.map(t=>card(t,false)).join("")}</div>`:`<div class="empty">${S.loaded?"No hay turnos cargados para este día.":"Cargando turnos…"}</div>`}</section>
   <footer><button class="btn ghost small" data-act="adminLogin">Administrar tareas</button></footer>`;
 }
 function reglaSoporte(t){
