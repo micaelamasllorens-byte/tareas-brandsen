@@ -155,6 +155,49 @@ h2{font-family:var(--f-label);font-weight:400;font-size:17px;letter-spacing:.07e
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600}
 footer{display:flex;justify-content:center}
+.chip.must{background:var(--red);color:#fff}
+.task.oblig .cb{border-color:var(--red)}
+.pend.oblig{border-left-color:var(--red)}
+.ib.mustb{background:var(--red);color:#fff;border-color:var(--red)}
+.ib{font-family:var(--f-display)}
+.reset{display:flex;justify-content:center;padding-top:6px}
+.linkbtn.muted2{color:var(--muted)}
+h2.red{color:var(--red)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi b{font-family:var(--f-display);font-size:28px;line-height:1;font-variant-numeric:tabular-nums}
+.kpi span{font-weight:600;font-size:14px}
+.kpi small{color:var(--muted);font-size:12px}
+.kpi.bad b{color:var(--red)}
+.hb{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr) 5.5rem;gap:10px;align-items:center;font-size:14px}
+.hb .hl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ht{height:12px;background:var(--line);border-radius:6px;overflow:hidden}
+.ht i,.vt i{display:block;height:100%;background:var(--ok);border-radius:6px}
+.ht i.low,.vt i.low{background:var(--red)}
+.ht i.warnb{background:var(--warn)}
+.hv{text-align:right;font-variant-numeric:tabular-nums;font-weight:700}
+.hv small{color:var(--muted);font-weight:500}
+.vbars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end;height:170px}
+.vb{display:flex;flex-direction:column;align-items:center;gap:4px;height:100%}
+.vt{flex:1;width:70%;background:var(--line);border-radius:6px;display:flex;align-items:flex-end;overflow:hidden}
+.vt i{width:100%;border-radius:6px 6px 0 0}
+.vv{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;min-height:1em}
+.vl{font-size:12px;color:var(--muted);white-space:nowrap}
+.tbl{overflow-x:auto}
+.tbl table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+.tbl th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.tbl td.bad{color:var(--red);font-weight:700}
+.lst{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.report{display:flex;flex-direction:column;gap:22px}
+@media print{
+  .noprint,.toast,footer{display:none!important}
+  body{background:#fff;color:#000}
+  main{padding-block:10px}
+  .kpi,.tbl,section{break-inside:avoid}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
 .quien{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
 .quien .ql{font-weight:700;font-size:14px}
 .linkbtn{align-self:flex-start;background:none;border:0;padding:2px 0;color:var(--warn);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:3px}
@@ -229,10 +272,13 @@ function bloquesDe(t){const order=[...(t.bloques||[])];(t.tareas||[]).forEach(x=
 /* ---------- registro del turno (borrador que se guarda solo) ---------- */
 let writing=false,dirty=false,saveT=null;
 function saveReg(){if(!S.reg||S.readonly)return;dirty=true;clearTimeout(saveT);saveT=setTimeout(flush,450)}
+function flushSnapshot(){const t=turno(S.reg.turnoId);
+  if(t){S.reg.tareasSnapshot=(t.tareas||[]).map(x=>({id:x.id,texto:x.texto,bloque:x.bloque,campo:x.campo?.label||"",foto:!!x.foto,obligatoria:!!x.obligatoria}));
+    S.reg.total=(t.tareas||[]).length;S.reg.hechas=(t.tareas||[]).filter(x=>S.reg.items[x.id]?.hecho).length}}
 async function flush(){
   if(writing||!dirty||!S.db||!S.reg)return;writing=true;dirty=false;
   const t=turno(S.reg.turnoId);
-  if(t){S.reg.tareasSnapshot=(t.tareas||[]).map(x=>({id:x.id,texto:x.texto,bloque:x.bloque,campo:x.campo?.label||"",foto:!!x.foto}));
+  if(t){S.reg.tareasSnapshot=(t.tareas||[]).map(x=>({id:x.id,texto:x.texto,bloque:x.bloque,campo:x.campo?.label||"",foto:!!x.foto,obligatoria:!!x.obligatoria}));
     S.reg.total=(t.tareas||[]).length;S.reg.hechas=(t.tareas||[]).filter(x=>S.reg.items[x.id]?.hecho).length}
   S.reg.actualizado=new Date().toISOString();
   try{await api("registros?on_conflict=id",{method:"POST",prefer:"resolution=merge-duplicates,return=minimal",body:{id:S.reg.id,fecha:S.reg.fecha,turno_id:S.reg.turnoId,data:clone(S.reg),actualizado:S.reg.actualizado}})}
@@ -243,7 +289,7 @@ function item(id){if(!S.reg.items[id])S.reg.items[id]={hecho:false,hora:"",motiv
 
 async function abrirTurno(id,readonly){
   const t=turno(id);if(!t)return;
-  S.turnoId=id;S.readonly=false;S.cierreErr=false;S.quienOtro=false;
+  S.turnoId=id;S.readonly=false;S.cierreErr=false;S.quienOtro=false;S.resetOk=false;
   const d=diaOp(0);const key=fechaKey(d)+"_"+id;
   S.reg={id:key,fecha:fechaKey(d),fechaTxt:fechaCorta(d),turnoId:id,turnoNombre:t.nombre,persona:t.persona,formato:t.formato,items:{},cerrado:false,cerradoHora:""};
   S.regExiste=false;S.view="lista";render();window.scrollTo(0,0);
@@ -262,8 +308,11 @@ function resumenTexto(){
   const quien=S.reg.persona||t.persona;const reemp=quien!==t.persona?` (reemplaza a ${t.persona})`:"";
   let s=`✅ *${t.nombre} – ${quien}*${reemp} · ${S.reg.fechaTxt}${otroDia}\n${FORMATOS[t.formato]} · ${t.horario}\nHechas: ${hechas.length}/${tareas.length}`;
   if(S.reg.cerradoHora)s+=` · Cerrado ${S.reg.cerradoHora}`;
+  const oblNo=no.filter(x=>x.obligatoria);
+  if(oblNo.length){s+=`\n\n⚠️ *OBLIGATORIAS SIN HACER*`;oblNo.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
   if(hechas.length){s+=`\n\n✔️ *Hechas*`;hechas.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto}${it.hora?` (${it.hora})`:""}`})}
-  if(no.length){s+=`\n\n❌ *No hechas*`;no.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
+  const noRest=no.filter(x=>!x.obligatoria);
+  if(noRest.length){s+=`\n\n❌ *No hechas*`;noRest.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
   const datos=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.dato);
   if(datos.length){s+=`\n\n📋 *Avisos*`;datos.forEach(x=>{s+=`\n• ${x.campo.label}: ${S.reg.items[x.id].dato}`})}
   const fotos=hechas.filter(x=>x.foto);
@@ -312,10 +361,10 @@ function vLista(){
       if(x.campo){campo=x.campo.tipo==="opciones"
         ?`<div class="field"><label>${esc(x.campo.label)}</label><div class="opts">${(x.campo.opciones||[]).map(o=>`<button class="opt ${it.dato===o?"on":""}" data-act="opt" data-id="${x.id}" data-v="${esc(o)}" ${ro?"disabled":""}>${esc(o)}</button>`).join("")}</div></div>`
         :`<div class="field"><label for="d_${x.id}">${esc(x.campo.label)}</label><input type="text" id="d_${x.id}" data-dato="${x.id}" value="${esc(it.dato||"")}" ${ro?"disabled":""}></div>`}
-      return `<div class="task ${it.hecho?"done":""}">
+      return `<div class="task ${it.hecho?"done":""} ${x.obligatoria?"oblig":""}">
         <button class="cb" data-act="tic" data-id="${x.id}" aria-pressed="${!!it.hecho}" aria-label="Marcar hecha" ${ro?"disabled":""}>${ICON_CHECK}</button>
         <div class="txt"><span class="tt">${esc(x.texto)}</span>
-          ${(x.foto||it.hora)?`<div class="meta">${x.foto?`<span class="chip">${ICON_CAM} Foto al grupo</span>`:""}${it.hora?`<span class="hora">Hecha ${it.hora}</span>`:""}</div>`:""}
+          ${(x.foto||it.hora||x.obligatoria)?`<div class="meta">${x.obligatoria?`<span class="chip must">Obligatoria</span>`:""}${x.foto?`<span class="chip">${ICON_CAM} Foto al grupo</span>`:""}${it.hora?`<span class="hora">Hecha ${it.hora}</span>`:""}</div>`:""}
           ${ro&&!it.hecho&&it.motivo?`<span class="err">No se hizo: ${esc(it.motivo)}${it.comentario?` (${esc(it.comentario)})`:""}</span>`:""}
           ${!ro&&!it.hecho?((it.motivo||S.motOpen.has(x.id))?`<div class="nohice">
               <div class="field"><label for="m_${x.id}">¿Por qué no se pudo hacer?</label>
@@ -334,6 +383,7 @@ function vLista(){
   ${reglaSoporte(t)}
   ${tareas.length?`${ro&&!S.regExiste?"":`<div class="prog"><div class="bar"><i style="width:${pct}%"></i></div><b>${hechas}/${tareas.length}</b></div>`}
     ${bloques}
+    ${ro?"":`<div class="reset">${S.resetOk?`<div class="confirm"><span>¿Empezar la lista de cero? Lo que marcaste queda guardado en el historial.</span><button class="btn primary" data-act="resetSi" ${S.busy?"disabled":""}>Sí, vaciar</button><button class="btn" data-act="resetNo">No</button></div>`:`<button class="linkbtn muted2" data-act="reset">Vaciar mi lista y empezar de cero</button>`}</div>`}
     ${ro?"":`<div class="endbar"><div class="endin"><span><b>${hechas}/${tareas.length}</b> hechas</span><button class="btn primary" data-act="cierre">Terminar turno y enviar</button></div></div>`}`
   :`<div class="empty">Todavía no hay tareas cargadas para este turno.<br>Se cargan desde “Administrar tareas”.</div>`}`;
 }
@@ -349,17 +399,19 @@ function vQuien(t){
 
 function vCierre(){
   const t=turno(S.turnoId);const tareas=t.tareas||[];
-  const no=tareas.filter(x=>!S.reg.items[x.id]?.hecho);
+  const no=tareas.filter(x=>!S.reg.items[x.id]?.hecho).sort((a,b)=>(b.obligatoria?1:0)-(a.obligatoria?1:0));
   const faltaDato=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.hecho&&!S.reg.items[x.id]?.dato);
+  const oblNo=no.filter(x=>x.obligatoria);
   return `<button class="btn ghost back" data-act="lista">${ICON_BACK} Volver a la lista</button>
   <section class="stack"><h1>Terminar turno</h1>
   <p class="muted" style="margin:0">${no.length?`Quedaron ${no.length} tareas sin hacer. Elegí por qué no se hizo cada una.`:"Hiciste todas las tareas."}</p></section>
-  ${no.map(x=>{const it=S.reg.items[x.id]||{};return `<div class="pend"><span class="tt">${esc(x.texto)}</span>
+  ${oblNo.length?`<div class="rule"><div><strong>QUEDARON TAREAS OBLIGATORIAS</strong><p>Facturar, las fotos y los proveedores no se pueden dejar. Si podés, volvé a la lista y hacelas antes de irte.</p></div></div>`:""}
+  ${no.map(x=>{const it=S.reg.items[x.id]||{};return `<div class="pend ${x.obligatoria?"oblig":""}">${x.obligatoria?`<span class="chip must" style="align-self:flex-start">Obligatoria</span>`:""}<span class="tt">${esc(x.texto)}</span>
     <div class="field"><label for="m_${x.id}">¿Por qué no se hizo?</label>
     <select id="m_${x.id}" data-motivo="${x.id}"><option value="">Elegí un motivo</option>${MOTIVOS.map(m=>`<option ${it.motivo===m?"selected":""}>${esc(m)}</option>`).join("")}</select></div>
     <div class="field">${campoComent(x,it)}</div>
     ${S.cierreErr&&!it.motivo?`<span class="err">Falta elegir el motivo.</span>`:S.cierreErr&&faltaMotivo(it)?`<span class="err">Falta poner quién la hizo.</span>`:""}</div>`}).join("")}
-  ${faltaDato.length?`<div class="note">Falta completar: ${faltaDato.map(x=>esc(x.campo.label)).join(", ")}. Volvé a la lista para cargarlo.</div>`:""}
+  ${faltaDato.length?`<div class="note">Falta completar: ${faltaDato.map(x=>esc(x.campo.label)).join(", ")}. Volvé a la lista para cargarlo.${faltaDato.some(x=>x.obligatoria)?" Sin esto no se puede terminar el turno.":""}</div>`:""}
   <button class="btn primary big" data-act="cerrar">Terminar y armar resumen</button>`;
 }
 
@@ -385,22 +437,23 @@ function vLogin(){
 }
 
 function vAdmin(){
-  const tabs=`<div class="tabs">${[["tareas","Tareas"],["vaciar","Vaciar"],["historial","Historial"],["codigo","Código"]].map(([k,l])=>`<button class="tab ${S.aTab===k?"on":""}" data-act="atab" data-v="${k}">${l}</button>`).join("")}</div>`;
+  const tabs=`<div class="tabs noprint">${[["tareas","Tareas"],["semanal","Semanal"],["historial","Historial"],["vaciar","Vaciar"],["codigo","Código"]].map(([k,l])=>`<button class="tab ${S.aTab===k?"on":""}" data-act="atab" data-v="${k}">${l}</button>`).join("")}</div>`;
   let body="";
   if(S.aTab==="tareas")body=vAdminTareas();
   if(S.aTab==="historial")body=vAdminHist();
+  if(S.aTab==="semanal")body=vSemanal();
   if(S.aTab==="vaciar"){const hoy=diaOp(0);
     body=`<div class="form"><h2>Vaciar listas de hoy</h2>
-    <p class="muted" style="margin:0">Deja sin tildar todas las listas que se completaron hoy (${DIAS[hoy.getDay()].toLowerCase()} ${hoy.getDate()}/${hoy.getMonth()+1}): tics, motivos, comentarios y datos. Sirve para borrar pruebas o volver a empezar.</p>
+    <p class="muted" style="margin:0">Deja sin tildar todas las listas de hoy (${DIAS[hoy.getDay()].toLowerCase()} ${hoy.getDate()}/${hoy.getMonth()+1}). Lo que estaba marcado no se pierde: queda guardado en el Historial como “lista vaciada”.</p>
     <p class="muted small" style="margin:0">No hace falta hacerlo todos los días: cada día las listas arrancan vacías solas. Lo de días anteriores queda en el historial.</p>
-    ${S.vaciarOk?`<div class="confirm"><span><b>¿Vaciar todas las listas de hoy?</b> No se puede deshacer.</span><button class="btn primary" data-act="vaciarSi" ${S.busy?"disabled":""}>Sí, vaciar</button><button class="btn" data-act="vaciarNo">Cancelar</button></div>`
+    ${S.vaciarOk?`<div class="confirm"><span><b>¿Vaciar todas las listas de hoy?</b></span><button class="btn primary" data-act="vaciarSi" ${S.busy?"disabled":""}>Sí, vaciar</button><button class="btn" data-act="vaciarNo">Cancelar</button></div>`
       :`<button class="btn primary" data-act="vaciar">Vaciar listas de hoy</button>`}</div>`}
   if(S.aTab==="codigo")body=`<form class="form" id="codeF"><h2>Cambiar código</h2>
     <div class="field"><label for="nc1">Código nuevo (mínimo 4 números)</label><input class="inp" id="nc1" type="password" inputmode="numeric" autocomplete="off"></div>
     <div class="field"><label for="nc2">Repetilo</label><input class="inp" id="nc2" type="password" inputmode="numeric" autocomplete="off"></div>
     <button class="btn primary" type="submit">Guardar código</button></form>`;
-  return `<div class="row" style="justify-content:space-between"><button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button><button class="btn ghost small" data-act="salir">Salir de administrar</button></div>
-  <h1>Administrar</h1>${tabs}${body}`;
+  return `<div class="row noprint" style="justify-content:space-between"><button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button><button class="btn ghost small" data-act="salir">Salir de administrar</button></div>
+  <h1 class="noprint">Administrar</h1>${tabs}${body}`;
 }
 
 function vAdminTareas(){
@@ -408,9 +461,9 @@ function vAdminTareas(){
   const t=turno(S.aTurno);if(!t)return sel;
   const tareas=t.tareas||[];const bloques=bloquesDe(t);const todos=[...new Set([...(t.bloques||[]),...bloques])];
   const lista=bloques.map(b=>`<section class="block"><h2>${esc(b)}</h2>${tareas.filter(x=>x.bloque===b).map(x=>`<div class="adm-task">
-      <div class="tt"><div>${esc(x.texto)}</div><div class="meta">${x.foto?`<span class="chip">${ICON_CAM} Foto</span>`:""}${x.campo?`<span class="chip">Dato: ${esc(x.campo.label)}</span>`:""}</div></div>
+      <div class="tt"><div>${esc(x.texto)}</div><div class="meta">${x.obligatoria?`<span class="chip must">Obligatoria</span>`:""}${x.foto?`<span class="chip">${ICON_CAM} Foto</span>`:""}${x.campo?`<span class="chip">Dato: ${esc(x.campo.label)}</span>`:""}</div></div>
       ${S.aConfirm===x.id?`<div class="confirm"><span>¿Eliminar?</span><button class="btn primary" data-act="delOk" data-id="${x.id}">Sí</button><button class="btn" data-act="delNo">No</button></div>`
-      :`<div class="icons"><button class="ib" data-act="up" data-id="${x.id}" aria-label="Subir">${ICON_UP}</button><button class="ib" data-act="down" data-id="${x.id}" aria-label="Bajar">${ICON_DOWN}</button><button class="ib danger" data-act="del" data-id="${x.id}" aria-label="Eliminar">${ICON_DEL}</button></div>`}
+      :`<div class="icons"><button class="ib ${x.obligatoria?"mustb":""}" data-act="oblig" data-id="${x.id}" aria-label="Marcar obligatoria" title="Obligatoria">!</button><button class="ib" data-act="up" data-id="${x.id}" aria-label="Subir">${ICON_UP}</button><button class="ib" data-act="down" data-id="${x.id}" aria-label="Bajar">${ICON_DOWN}</button><button class="ib danger" data-act="del" data-id="${x.id}" aria-label="Eliminar">${ICON_DEL}</button></div>`}
     </div>`).join("")}</section>`).join("");
   return `${sel}
   <div class="row"><span class="chip f-${t.formato}">${FORMATOS[t.formato]}</span><span class="muted small">${tareas.length} tareas</span></div>
@@ -422,6 +475,7 @@ function vAdminTareas(){
       <div class="field" ${S.aBloqueNuevo||!todos.length?"":"hidden"} id="nbWrap"><label for="nBloqueNom">Nombre del bloque nuevo</label><input class="inp" id="nBloqueNom" type="text" placeholder="Ej: Apertura"></div>
     </div>
     <label class="check"><input type="checkbox" id="nFoto"> Pedir foto al grupo</label>
+    <label class="check"><input type="checkbox" id="nOblig"> Obligatoria (no se puede olvidar)</label>
     <div class="two">
       <div class="field"><label for="nCampo">Pedir un dato</label><select class="inp" id="nCampo">
         <option value="ninguno" ${S.aCampo==="ninguno"?"selected":""}>No</option><option value="texto" ${S.aCampo==="texto"?"selected":""}>Sí, que escriban</option><option value="opciones" ${S.aCampo==="opciones"?"selected":""}>Sí, que elijan una opción</option></select></div>
@@ -432,21 +486,126 @@ function vAdminTareas(){
 }
 
 function vAdminHist(){
-  if(!S.hist)return `<div class="empty">Cargando historial…</div>`;
-  if(!S.hist.length)return `<div class="empty">Todavía no hay turnos registrados. Van a aparecer acá a medida que los chicos completen sus listas.</div>`;
+  const filtro=`<div class="form"><div class="row" style="align-items:flex-end">
+    <div class="field" style="flex:1;min-width:160px"><label for="histFecha">Ver un día</label><input class="inp" type="date" id="histFecha" value="${esc(S.histFecha||"")}" max="${fechaKey(diaOp(0))}"></div>
+    ${S.histFecha?`<button class="btn" data-act="histHoy">Ver los últimos</button>`:""}</div>
+    <span class="muted small">Todo queda guardado: podés ver cualquier día, aunque las listas se hayan vaciado.</span></div>`;
+  if(!S.hist)return filtro+`<div class="empty">Cargando historial…</div>`;
+  if(!S.hist.length)return filtro+`<div class="empty">${S.histFecha?"No hay turnos registrados ese día.":"Todavía no hay turnos registrados. Van a aparecer acá a medida que los chicos completen sus listas."}</div>`;
   const cnt={};S.hist.forEach(r=>Object.values(r.items||{}).forEach(i=>{if(!i.hecho&&i.motivo)cnt[i.motivo]=(cnt[i.motivo]||0)+1}));
   const tot=Object.values(cnt).reduce((a,b)=>a+b,0);const max=Math.max(1,...Object.values(cnt));
   const mot=tot?`<section class="stack"><h2>Por qué no se hacen las tareas</h2>${Object.entries(cnt).sort((a,b)=>b[1]-a[1]).map(([m,n])=>`<div class="motbar"><span>${esc(m)}</span><span class="b"><i style="width:${n/max*100}%"></i></span><span>${n}</span></div>`).join("")}</section>`:"";
-  return `${mot}<section class="stack"><h2>Últimos turnos</h2>${S.hist.map(r=>{const open=S.histOpen===r.id;const snap=r.tareasSnapshot||[];
-    const no=snap.filter(x=>!r.items?.[x.id]?.hecho);const pct=r.total?r.hechas/r.total:0;
+  return `${filtro}${mot}<section class="stack"><h2>${S.histFecha?"Turnos del día":"Últimos turnos"}</h2>${S.hist.map(r=>{const open=S.histOpen===r.id;const snap=r.tareasSnapshot||[];
+    const no=snap.filter(x=>!r.items?.[x.id]?.hecho);const st=statsReg(r);r.total=st.total;r.hechas=st.hechas.length;const pct=r.total?r.hechas/r.total:0;
     const horas=snap.map(x=>r.items?.[x.id]?.hora).filter(Boolean);
     return `<button class="hist" data-act="hist" data-id="${esc(r.id)}">
       <div class="top"><strong>${esc(r.persona)} · ${esc(r.turnoNombre)}</strong><span class="muted small">${esc(r.fechaTxt||r.fecha)}</span></div>
-      <div class="row"><span class="chip ${pct===1?"ok":pct>=.7?"":"warn"}">${r.hechas||0}/${r.total||0} hechas</span><span class="chip ${r.cerrado?"ok":"warn"}">${r.cerrado?"Cerrado "+esc(r.cerradoHora):"Sin cerrar"}</span></div>
+      <div class="row"><span class="chip ${pct===1?"ok":pct>=.7?"":"warn"}">${r.hechas||0}/${r.total||0} hechas</span><span class="chip ${r.cerrado?"ok":"warn"}">${r.cerrado?"Cerrado "+esc(r.cerradoHora):"Sin cerrar"}</span>${r.archivada?`<span class="chip">Lista vaciada ${esc(r.archivadaHora||"")}${r.archivadaPor==="admin"?" (admin)":""}</span>`:""}${statsReg(r).oblNo.length?`<span class="chip must">${statsReg(r).oblNo.length} obligatoria${statsReg(r).oblNo.length>1?"s":""} sin hacer</span>`:""}${tildesRapidos(r)?`<span class="chip warn">Tildes de golpe</span>`:""}</div>
       ${open?`<div class="det">${horas.length?`<span class="muted">Tildes entre ${horas.sort()[0]} y ${horas.sort().slice(-1)[0]}</span>`:""}
         ${no.length?no.map(x=>{const i=r.items?.[x.id]||{};return `<span>❌ ${esc(x.texto)} → <b>${esc(i.motivo||"sin motivo")}</b>${i.comentario?` (${esc(i.comentario)})`:""}</span>`}).join(""):"<span>Todas hechas.</span>"}
         ${snap.filter(x=>x.campo&&r.items?.[x.id]?.dato).map(x=>`<span>📋 ${esc(x.campo)}: ${esc(r.items[x.id].dato)}</span>`).join("")}</div>`:""}
     </button>`}).join("")}</section>`;
+}
+
+/* ---------- archivar y vaciar (el historial nunca pierde nada) ---------- */
+const tieneContenido=d=>!!d&&(d.cerrado||Object.values(d.items||{}).some(i=>i.hecho||i.motivo||i.dato));
+async function archivarYVaciar(id,turnoId,fecha,data,quien){
+  if(tieneContenido(data)){
+    const arch={...clone(data),archivada:true,archivadaHora:horaAhora(),archivadaPor:quien};
+    await api("registros",{method:"POST",prefer:"return=minimal",body:{id:id+"~"+Date.now(),fecha,turno_id:turnoId,data:arch,actualizado:new Date().toISOString()}});
+  }
+  const limpio={...clone(data),items:{},cerrado:false,cerradoHora:"",hechas:0,actualizado:new Date().toISOString()};
+  await api("registros?on_conflict=id",{method:"POST",prefer:"resolution=merge-duplicates,return=minimal",body:{id,fecha,turno_id:turnoId,data:limpio,actualizado:limpio.actualizado}});
+  return limpio;
+}
+
+/* ---------- tildes muy seguidos ---------- */
+function tildesRapidos(r){
+  const ms=Object.values(r.items||{}).filter(i=>i.hecho&&i.hora).map(i=>{const [h,m]=i.hora.split(":").map(Number);return h*60+m}).sort((a,b)=>a-b);
+  let max=0;for(let i=0,j=0;i<ms.length;i++){while(ms[i]-ms[j]>3)j++;max=Math.max(max,i-j+1)}
+  return max>=8?max:0;
+}
+
+/* ---------- estadísticas de un registro ---------- */
+function statsReg(r){
+  const cur=turno(r.turnoId)?.tareas||[];const snap=(r.tareasSnapshot||[]).map(x=>x.obligatoria===undefined?{...x,obligatoria:!!cur.find(c=>c.id===x.id)?.obligatoria}:x);const it=r.items||{};
+  const hechas=snap.filter(x=>it[x.id]?.hecho);const no=snap.filter(x=>!it[x.id]?.hecho);
+  return {snap,hechas,no,oblNo:no.filter(x=>x.obligatoria),total:snap.length};
+}
+
+/* ---------- resumen semanal ---------- */
+function rangoSemana(off){
+  const d=diaOp(0);const dow=(d.getDay()+6)%7;const lun=new Date(d);lun.setDate(d.getDate()-dow+off*7);lun.setHours(12,0,0,0);
+  const dom=new Date(lun);dom.setDate(lun.getDate()+6);return {lun,dom};
+}
+async function cargarSemana(){
+  S.sem=null;render();
+  const {lun,dom}=rangoSemana(S.semOff||0);
+  try{const rows=await api(`registros?select=id,data&fecha=gte.${fechaKey(lun)}&fecha=lte.${fechaKey(dom)}&order=fecha.asc&limit=1000`);
+    S.sem=rows.map(r=>({...r.data,id:r.id})).filter(r=>!r.archivada&&tieneContenido(r))}
+  catch(e){S.sem=[];toast("No se pudo cargar la semana.")}
+  if(S.view==="admin"&&S.aTab==="semanal")render();
+}
+function calcSemana(){
+  const regs=S.sem||[];const {lun,dom}=rangoSemana(S.semOff||0);const hoy=diaOp(0);
+  const P={},D={},M={},T={},oblNo=[],rapidos=[],prov=[];let tot=0,hech=0;
+  for(let i=0;i<7;i++){const d=new Date(lun);d.setDate(lun.getDate()+i);D[fechaKey(d)]={label:DIAS_C[d.getDay()]+" "+d.getDate(),tot:0,hech:0}}
+  regs.forEach(r=>{const s=statsReg(r);const q=r.persona||"—";
+    tot+=s.total;hech+=s.hechas.length;
+    P[q]=P[q]||{turnos:0,tot:0,hech:0,obl:0,cerr:0};P[q].turnos++;P[q].tot+=s.total;P[q].hech+=s.hechas.length;P[q].obl+=s.oblNo.length;if(r.cerrado)P[q].cerr++;
+    if(D[r.fecha]){D[r.fecha].tot+=s.total;D[r.fecha].hech+=s.hechas.length}
+    s.no.forEach(x=>{const i=r.items?.[x.id]||{};if(i.motivo)M[i.motivo]=(M[i.motivo]||0)+1;T[x.texto]=(T[x.texto]||0)+1});
+    s.oblNo.forEach(x=>{const i=r.items?.[x.id]||{};oblNo.push({fecha:r.fechaTxt||r.fecha,quien:q,texto:x.texto,motivo:i.motivo||"sin motivo",com:i.comentario||""})});
+    const rp=tildesRapidos(r);if(rp)rapidos.push({fecha:r.fechaTxt||r.fecha,quien:q,turno:r.turnoNombre,n:rp});
+    s.snap.filter(x=>x.campo&&/proveedor/i.test(x.campo)&&r.items?.[x.id]?.dato).forEach(x=>prov.push({fecha:r.fechaTxt||r.fecha,quien:q,dato:r.items[x.id].dato}));
+  });
+  const hechosIds=new Set(regs.map(r=>r.turnoId));const faltan=[];
+  S.turnos.filter(t=>(t.tareas||[]).length).forEach(t=>{const d=new Date(lun);d.setDate(lun.getDate()+((t.dia+6)%7));
+    if(fechaKey(d)<=fechaKey(hoy)&&!hechosIds.has(t.id))faltan.push({t,d})});
+  faltan.sort((a,b)=>a.d-b.d);
+  return {lun,dom,regs,P,D,M,T,oblNo,rapidos,prov,faltan,tot,hech,pct:tot?Math.round(hech/tot*100):0};
+}
+const pctTxt=(h,t)=>t?Math.round(h/t*100)+"%":"—";
+function barra(label,val,max,txt,cls=""){return `<div class="hb"><span class="hl">${esc(label)}</span><span class="ht"><i class="${cls}" style="width:${max?Math.max(2,val/max*100):0}%"></i></span><span class="hv">${txt}</span></div>`}
+function vSemanal(){
+  if(!S.sem)return `<div class="empty">Cargando la semana…</div>`;
+  const c=calcSemana();const f=d=>`${d.getDate()}/${d.getMonth()+1}`;
+  const nav=`<div class="row noprint" style="justify-content:space-between">
+    <div class="row"><button class="ib" data-act="semPrev" aria-label="Semana anterior">${ICON_BACK}</button>
+    <button class="ib" data-act="semNext" aria-label="Semana siguiente" ${(S.semOff||0)>=0?"disabled":""} style="transform:scaleX(-1)">${ICON_BACK}</button></div>
+    <div class="row"><button class="btn yellow" data-act="semCopiar">Copiar para WhatsApp</button><button class="btn primary" data-act="semPdf">Descargar PDF</button></div></div>`;
+  const head=`<section class="stack"><h2>Resumen semanal</h2><h1 style="font-size:22px">Semana del ${f(c.lun)} al ${f(c.dom)}</h1></section>`;
+  if(!c.regs.length&&!c.faltan.length)return nav+head+`<div class="empty">No hay turnos registrados esta semana.</div>`;
+  const kpi=`<div class="kpis">
+    <div class="kpi"><b>${c.pct}%</b><span>tareas hechas</span><small>${c.hech} de ${c.tot}</small></div>
+    <div class="kpi"><b>${c.regs.length}</b><span>turnos registrados</span><small>${c.regs.filter(r=>r.cerrado).length} cerrados</small></div>
+    <div class="kpi ${c.oblNo.length?"bad":""}"><b>${c.oblNo.length}</b><span>obligatorias sin hacer</span><small>facturar, fotos, proveedores</small></div>
+    <div class="kpi ${c.faltan.length?"bad":""}"><b>${c.faltan.length}</b><span>turnos sin usar la app</span><small>no hay registro</small></div></div>`;
+  const pers=Object.entries(c.P).sort((a,b)=>b[1].hech/b[1].tot-a[1].hech/a[1].tot);
+  const porPersona=`<section class="stack"><h2>Cumplimiento por persona</h2>${pers.map(([q,p])=>barra(q,p.hech,p.tot,`${pctTxt(p.hech,p.tot)} <small>${p.hech}/${p.tot}</small>`,p.hech/p.tot<.7?"low":"")).join("")}
+    <div class="tbl"><table><thead><tr><th>Persona</th><th>Turnos</th><th>Cerrados</th><th>Hechas</th><th>Obligatorias sin hacer</th></tr></thead><tbody>
+    ${pers.map(([q,p])=>`<tr><td>${esc(q)}</td><td>${p.turnos}</td><td>${p.cerr}</td><td>${p.hech}/${p.tot} (${pctTxt(p.hech,p.tot)})</td><td class="${p.obl?"bad":""}">${p.obl}</td></tr>`).join("")}</tbody></table></div></section>`;
+  const dias=Object.values(c.D);
+  const porDia=`<section class="stack"><h2>Cumplimiento por día</h2><div class="vbars">${dias.map(d=>`<div class="vb"><span class="vv">${d.tot?pctTxt(d.hech,d.tot):""}</span><span class="vt"><i class="${d.tot&&d.hech/d.tot<.7?"low":""}" style="height:${d.tot?Math.max(3,d.hech/d.tot*100):0}%"></i></span><span class="vl">${d.label}</span></div>`).join("")}</div></section>`;
+  const mot=Object.entries(c.M).sort((a,b)=>b[1]-a[1]);const mMax=Math.max(1,...mot.map(m=>m[1]));
+  const motivos=mot.length?`<section class="stack"><h2>Por qué no se hicieron</h2>${mot.map(([m,n])=>barra(m,n,mMax,n,"warnb")).join("")}</section>`:"";
+  const top=Object.entries(c.T).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const topT=top.length?`<section class="stack"><h2>Tareas que más quedan sin hacer</h2><ol class="lst">${top.map(([t,n])=>`<li>${esc(t)} <b>· ${n} ${n===1?"vez":"veces"}</b></li>`).join("")}</ol></section>`:"";
+  const obl=c.oblNo.length?`<section class="stack"><h2 class="red">Obligatorias sin hacer</h2><ul class="lst">${c.oblNo.map(o=>`<li><b>${esc(o.fecha)} · ${esc(o.quien)}</b>: ${esc(o.texto)} → ${esc(o.motivo)}${o.com?` (${esc(o.com)})`:""}</li>`).join("")}</ul></section>`:"";
+  const falt=c.faltan.length?`<section class="stack"><h2 class="red">Turnos sin registro en la app</h2><ul class="lst">${c.faltan.map(x=>`<li><b>${DIAS[x.t.dia]} ${f(x.d)}</b> · ${esc(x.t.persona)} (${esc(x.t.nombre)} ${esc(x.t.horario)})</li>`).join("")}</ul></section>`:"";
+  const rap=c.rapidos.length?`<section class="stack"><h2>Tildes de golpe</h2><p class="muted small" style="margin:0">Turnos donde se marcaron 8 o más tareas en menos de 3 minutos. Conviene chequear que se hayan hecho.</p><ul class="lst">${c.rapidos.map(r=>`<li><b>${esc(r.fecha)} · ${esc(r.quien)}</b> (${esc(r.turno)}): ${r.n} tareas casi al mismo tiempo</li>`).join("")}</ul></section>`:"";
+  const prov=c.prov.length?`<section class="stack"><h2>Proveedores y pagos</h2><ul class="lst">${c.prov.map(p=>`<li><b>${esc(p.fecha)} · ${esc(p.quien)}</b>: ${esc(p.dato)}</li>`).join("")}</ul></section>`:"";
+  return `${nav}<div class="report">${head}${kpi}${obl}${falt}${porPersona}${porDia}${motivos}${topT}${rap}${prov}</div>`;
+}
+function semanaTexto(){
+  const c=calcSemana();const f=d=>`${d.getDate()}/${d.getMonth()+1}`;
+  let s=`📊 *Resumen semanal Kiosco Brandsen*\nSemana del ${f(c.lun)} al ${f(c.dom)}\n\nTareas hechas: ${c.pct}% (${c.hech}/${c.tot})\nTurnos registrados: ${c.regs.length}\nObligatorias sin hacer: ${c.oblNo.length}\nTurnos sin usar la app: ${c.faltan.length}`;
+  const pers=Object.entries(c.P).sort((a,b)=>b[1].hech/b[1].tot-a[1].hech/a[1].tot);
+  if(pers.length){s+=`\n\n👥 *Por persona*`;pers.forEach(([q,p])=>{s+=`\n• ${q}: ${pctTxt(p.hech,p.tot)} (${p.hech}/${p.tot}) · ${p.turnos} turnos${p.obl?` · ⚠️ ${p.obl} obligatorias sin hacer`:""}`})}
+  if(c.oblNo.length){s+=`\n\n⚠️ *Obligatorias sin hacer*`;c.oblNo.forEach(o=>{s+=`\n• ${o.fecha} ${o.quien}: ${o.texto} → ${o.motivo}`})}
+  if(c.faltan.length){s+=`\n\n🚫 *Turnos sin registro*`;c.faltan.forEach(x=>{s+=`\n• ${DIAS[x.t.dia]} ${f(x.d)}: ${x.t.persona}`})}
+  const mot=Object.entries(c.M).sort((a,b)=>b[1]-a[1]);if(mot.length){s+=`\n\n❓ *Motivos*`;mot.forEach(([m,n])=>{s+=`\n• ${m}: ${n}`})}
+  return s;
 }
 
 function render(){
@@ -466,7 +625,8 @@ async function guardarTurno(t){
 }
 async function cargarHist(){
   S.hist=null;render();
-  try{const rows=await api("registros?select=id,data&order=actualizado.desc&limit=60");S.hist=rows.map(r=>({...r.data,id:r.id})).filter(r=>r.cerrado||Object.values(r.items||{}).some(i=>i.hecho||i.motivo))}
+  const q=S.histFecha?`registros?select=id,data&fecha=eq.${S.histFecha}&order=actualizado.asc&limit=500`:"registros?select=id,data&order=actualizado.desc&limit=60";
+  try{const rows=await api(q);S.hist=rows.map(r=>({...r.data,id:r.id})).filter(tieneContenido)}
   catch(e){S.hist=[];toast("No se pudo cargar el historial.")}
   if(S.view==="admin"&&S.aTab==="historial")render();
 }
@@ -487,6 +647,7 @@ $app.addEventListener("click",async e=>{
   else if(a==="cierre"){S.view="cierre";S.cierreErr=false;render();window.scrollTo(0,0)}
   else if(a==="cerrar"){
     const t=turno(S.turnoId);const no=(t.tareas||[]).filter(x=>!S.reg.items[x.id]?.hecho);
+    if((t.tareas||[]).some(x=>x.obligatoria&&x.campo&&S.reg.items[x.id]?.hecho&&!(S.reg.items[x.id]?.dato||"").trim())){S.cierreErr=true;S.view="cierre";render();toast("Falta completar el dato de una tarea obligatoria.");return}
     if(no.some(x=>faltaMotivo(S.reg.items[x.id]))){S.cierreErr=true;S.view="cierre";render();toast("Falta el motivo (o quién la hizo) en alguna tarea.");return}
     S.reg.cerrado=true;S.reg.cerradoHora=horaAhora();saveReg();S.view="resumen";render();window.scrollTo(0,0)}
   else if(a==="reabrir"){S.reg.cerrado=false;S.reg.cerradoHora="";saveReg();S.view="lista";render()}
@@ -495,10 +656,11 @@ $app.addEventListener("click",async e=>{
     catch(_){const r=document.createRange();r.selectNodeContents(document.getElementById("sumtxt"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Texto seleccionado: copialo con el menú")}}
   else if(a==="adminLogin"){S.loginErr="";S.view=S.admin?"admin":"adminLogin";if(S.admin&&!S.aTurno)S.aTurno=S.turnos[0]?.id;render()}
   else if(a==="salir"){S.admin=false;S.view="home";render()}
-  else if(a==="atab"){S.aTab=b.dataset.v;S.aConfirm=null;if(S.aTab==="historial")cargarHist();render()}
+  else if(a==="atab"){S.aTab=b.dataset.v;S.aConfirm=null;if(S.aTab==="historial")cargarHist();if(S.aTab==="semanal")cargarSemana();render()}
   else if(a==="del"){S.aConfirm=id;render()}
   else if(a==="delNo"){S.aConfirm=null;render()}
   else if(a==="delOk"){const t=clone(turno(S.aTurno));t.tareas=t.tareas.filter(x=>x.id!==id);S.aConfirm=null;if(await guardarTurno(t))toast("Tarea eliminada")}
+  else if(a==="oblig"){const t=clone(turno(S.aTurno));const x=t.tareas.find(x=>x.id===id);x.obligatoria=!x.obligatoria;if(await guardarTurno(t))toast(x.obligatoria?"Marcada como obligatoria":"Ya no es obligatoria")}
   else if(a==="up"||a==="down"){const t=clone(turno(S.aTurno));const arr=t.tareas;const i=arr.findIndex(x=>x.id===id);const bl=arr[i].bloque;
     let j=i;do{j+=a==="up"?-1:1}while(j>=0&&j<arr.length&&arr[j].bloque!==bl);
     if(j<0||j>=arr.length)return;[arr[i],arr[j]]=[arr[j],arr[i]];await guardarTurno(t)}
@@ -507,11 +669,24 @@ $app.addEventListener("click",async e=>{
   else if(a==="vaciarSi"){
     S.busy=true;render();const f=fechaKey(diaOp(0));
     try{const rows=await api("registros?select=id,turno_id,data&fecha=eq."+f);
-      for(const r of rows){const d={...r.data,items:{},cerrado:false,cerradoHora:"",hechas:0,actualizado:new Date().toISOString()};
-        await api("registros?on_conflict=id",{method:"POST",prefer:"resolution=merge-duplicates,return=minimal",body:{id:r.id,fecha:f,turno_id:r.turno_id,data:d,actualizado:d.actualizado}})}
+      const vivos=rows.filter(r=>!r.id.includes("~")&&tieneContenido(r.data));
+      for(const r of vivos)await archivarYVaciar(r.id,r.turno_id,f,r.data,"admin");
       if(S.reg&&S.reg.fecha===f){S.reg.items={};S.reg.cerrado=false;S.reg.cerradoHora=""}
-      S.motOpen=new Set();S.vaciarOk=false;S.busy=false;render();toast(rows.length?`Listo: ${rows.length} ${rows.length===1?"lista vaciada":"listas vaciadas"}`:"No había listas tildadas hoy")}
+      S.motOpen=new Set();S.vaciarOk=false;S.busy=false;render();toast(vivos.length?`Listo: ${vivos.length} ${vivos.length===1?"lista vaciada":"listas vaciadas"}`:"No había listas tildadas hoy")}
     catch(e){S.busy=false;S.vaciarOk=false;render();toast("No se pudo vaciar. Revisá la conexión.")}}
+  else if(a==="reset"){S.resetOk=true;render()}
+  else if(a==="resetNo"){S.resetOk=false;render()}
+  else if(a==="resetSi"){S.busy=true;render();
+    try{clearTimeout(saveT);dirty=false;const t=turno(S.turnoId);
+      flushSnapshot();const limpio=await archivarYVaciar(S.reg.id,S.reg.turnoId,S.reg.fecha,S.reg,S.reg.persona||t?.persona||"");
+      S.reg=Object.assign(S.reg,limpio);S.motOpen=new Set();toast("Lista vacía. Lo anterior quedó en el historial.")}
+    catch(e){toast("No se pudo vaciar. Revisá la conexión.")}
+    S.busy=false;S.resetOk=false;render()}
+  else if(a==="semPrev"){S.semOff=(S.semOff||0)-1;cargarSemana()}
+  else if(a==="semNext"){S.semOff=Math.min(0,(S.semOff||0)+1);cargarSemana()}
+  else if(a==="semPdf"){window.print()}
+  else if(a==="semCopiar"){const txt=semanaTexto();try{await navigator.clipboard.writeText(txt);toast("Resumen semanal copiado")}catch(_){toast("No se pudo copiar")}}
+  else if(a==="histHoy"){S.histFecha="";cargarHist()}
   else if(a==="hist"){S.histOpen=S.histOpen===id?null:id;render()}
 });
 
@@ -524,6 +699,7 @@ $app.addEventListener("input",e=>{
 $app.addEventListener("change",e=>{
   const el=e.target;
   if(el.dataset.motivo){item(el.dataset.motivo).motivo=el.value;saveReg();render()}
+  else if(el.id==="histFecha"){S.histFecha=el.value;cargarHist()}
   else if(el.id==="aSel"){S.aTurno=el.value;S.aConfirm=null;render()}
   else if(el.id==="nBloque"){S.aBloqueNuevo=el.value==="__nuevo";document.getElementById("nbWrap").hidden=!S.aBloqueNuevo}
   else if(el.id==="nCampo"){const txt=document.getElementById("nTxt").value;S.aCampo=el.value;render();document.getElementById("nTxt").value=txt}
@@ -541,7 +717,7 @@ $app.addEventListener("submit",async e=>{
     let bloque=document.getElementById("nBloque").value;
     if(bloque==="__nuevo"||!bloque){bloque=(document.getElementById("nBloqueNom")?.value||"").trim();if(!bloque){toast("Poné el nombre del bloque.");return}}
     if(!t.bloques.includes(bloque))t.bloques.push(bloque);
-    const nt={id:uid(),texto,bloque,foto:document.getElementById("nFoto").checked};
+    const nt={id:uid(),texto,bloque,foto:document.getElementById("nFoto").checked,obligatoria:document.getElementById("nOblig").checked};
     const ct=document.getElementById("nCampo").value;
     if(ct!=="ninguno"){const label=(document.getElementById("nCampoLbl")?.value||"").trim();if(!label){toast("Escribí la pregunta del dato.");return}
       nt.campo={tipo:ct,label};if(ct==="opciones"){nt.campo.opciones=(document.getElementById("nOpts").value||"").split(",").map(s=>s.trim()).filter(Boolean);if(nt.campo.opciones.length<2){toast("Poné al menos 2 opciones.");return}}}
