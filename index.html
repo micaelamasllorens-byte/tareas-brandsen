@@ -178,7 +178,7 @@ footer{display:flex;justify-content:center}
 const DIAS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 const DIAS_C=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const FORMATOS={turno8:"Turno 8 hs",noche:"Soporte noche",soporte:"Soporte tareas"};
-const MOTIVOS=["Mucha gente / no hubo tiempo","Faltó mercadería o insumo","No sabía cómo hacerla","La dejé para el próximo turno (avisado)","Me olvidé","Otro"];
+const MOTIVOS=["Mucha gente / no hubo tiempo","Faltó mercadería o insumo","No sabía cómo hacerla","La dejé para el próximo turno (avisado)","Lo hizo uno de mis compañeros","Me olvidé","Otro"];
 const ICON_CHECK='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const ICON_CAM='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h3l2-3h8l2 3h3v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg>';
 const ICON_PHONE='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M3 3l18 18"/></svg>';
@@ -253,6 +253,7 @@ function resumenTexto(){
   const otroDia=t.dia!==diaOp(0).getDay()?` (lista del ${DIAS[t.dia].toLowerCase()})`:"";
   let s=`✅ *${t.nombre} – ${t.persona}* · ${S.reg.fechaTxt}${otroDia}\n${FORMATOS[t.formato]} · ${t.horario}\nHechas: ${hechas.length}/${tareas.length}`;
   if(S.reg.cerradoHora)s+=` · Cerrado ${S.reg.cerradoHora}`;
+  if(hechas.length){s+=`\n\n✔️ *Hechas*`;hechas.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto}${it.hora?` (${it.hora})`:""}`})}
   if(no.length){s+=`\n\n❌ *No hechas*`;no.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
   const datos=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.dato);
   if(datos.length){s+=`\n\n📋 *Avisos*`;datos.forEach(x=>{s+=`\n• ${x.campo.label}: ${S.reg.items[x.id].dato}`})}
