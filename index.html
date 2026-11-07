@@ -155,6 +155,8 @@ h2{font-family:var(--f-label);font-weight:400;font-size:17px;letter-spacing:.07e
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
 .note{background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px;font-weight:600}
 footer{display:flex;justify-content:center}
+.quien{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.quien .ql{font-weight:700;font-size:14px}
 .linkbtn{align-self:flex-start;background:none;border:0;padding:2px 0;color:var(--warn);font-weight:600;font-size:14px;text-decoration:underline;text-underline-offset:3px}
 .nohice{background:var(--warn-soft);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
 .nohice select,.nohice input{background:var(--surface)}
@@ -178,6 +180,7 @@ footer{display:flex;justify-content:center}
 const DIAS=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 const DIAS_C=["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
 const FORMATOS={turno8:"Turno 8 hs",noche:"Soporte noche",soporte:"Soporte tareas"};
+const EQUIPO=["Kary","Ivo","Gabi","Lucas","Ari","Tizi","Mica","Pablo"];
 const COMP="Lo hizo uno de mis compañeros";
 const faltaMotivo=it=>!it?.motivo||(it.motivo===COMP&&!(it.comentario||"").trim());
 const campoComent=(x,it)=>it.motivo===COMP
@@ -240,7 +243,7 @@ function item(id){if(!S.reg.items[id])S.reg.items[id]={hecho:false,hora:"",motiv
 
 async function abrirTurno(id,readonly){
   const t=turno(id);if(!t)return;
-  S.turnoId=id;S.readonly=false;S.cierreErr=false;
+  S.turnoId=id;S.readonly=false;S.cierreErr=false;S.quienOtro=false;
   const d=diaOp(0);const key=fechaKey(d)+"_"+id;
   S.reg={id:key,fecha:fechaKey(d),fechaTxt:fechaCorta(d),turnoId:id,turnoNombre:t.nombre,persona:t.persona,formato:t.formato,items:{},cerrado:false,cerradoHora:""};
   S.regExiste=false;S.view="lista";render();window.scrollTo(0,0);
@@ -256,7 +259,8 @@ function resumenTexto(){
   const hechas=tareas.filter(x=>S.reg.items[x.id]?.hecho);
   const no=tareas.filter(x=>!S.reg.items[x.id]?.hecho);
   const otroDia=t.dia!==diaOp(0).getDay()?` (lista del ${DIAS[t.dia].toLowerCase()})`:"";
-  let s=`✅ *${t.nombre} – ${t.persona}* · ${S.reg.fechaTxt}${otroDia}\n${FORMATOS[t.formato]} · ${t.horario}\nHechas: ${hechas.length}/${tareas.length}`;
+  const quien=S.reg.persona||t.persona;const reemp=quien!==t.persona?` (reemplaza a ${t.persona})`:"";
+  let s=`✅ *${t.nombre} – ${quien}*${reemp} · ${S.reg.fechaTxt}${otroDia}\n${FORMATOS[t.formato]} · ${t.horario}\nHechas: ${hechas.length}/${tareas.length}`;
   if(S.reg.cerradoHora)s+=` · Cerrado ${S.reg.cerradoHora}`;
   if(hechas.length){s+=`\n\n✔️ *Hechas*`;hechas.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto}${it.hora?` (${it.hora})`:""}`})}
   if(no.length){s+=`\n\n❌ *No hechas*`;no.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
@@ -323,6 +327,7 @@ function vLista(){
   <section class="stack">
     <div class="row"><span class="chip f-${t.formato}">${FORMATOS[t.formato]}</span><span class="muted small">${esc(t.nombre)} · ${esc(t.horario)}</span></div>
     <h1>${esc(t.persona)}${ro?` · ${DIAS[t.dia]}`:""}</h1>
+    ${ro?"":vQuien(t)}
     ${ro?(S.regExiste?`<div class="note">Así quedó el ${esc(S.reg.fechaTxt)}${S.reg.cerrado?` · cerrado ${esc(S.reg.cerradoHora)}`:" · no se cerró el turno"}. Solo lectura.</div>`
       :`<div class="note">Esta lista es del ${DIAS[t.dia].toLowerCase()}. Solo se puede tildar el día del turno (hoy es ${DIAS[diaOp(0).getDay()].toLowerCase()}).</div>`):""}
   </section>
@@ -331,6 +336,15 @@ function vLista(){
     ${bloques}
     ${ro?"":`<div class="endbar"><div class="endin"><span><b>${hechas}/${tareas.length}</b> hechas</span><button class="btn primary" data-act="cierre">Terminar turno y enviar</button></div></div>`}`
   :`<div class="empty">Todavía no hay tareas cargadas para este turno.<br>Se cargan desde “Administrar tareas”.</div>`}`;
+}
+
+function vQuien(t){
+  const q=S.reg.persona||t.persona;const otro=!EQUIPO.includes(q)||S.quienOtro;
+  return `<div class="quien"><span class="ql">¿Quién hace este turno hoy?</span>
+    <div class="opts">${EQUIPO.map(n=>`<button class="opt ${q===n&&!S.quienOtro?"on":""}" data-act="quien" data-v="${n}" aria-pressed="${q===n}">${n}</button>`).join("")}
+    <button class="opt ${otro?"on":""}" data-act="quienOtro">Otro</button></div>
+    ${otro?`<div class="field"><label for="quienIn">Nombre</label><input type="text" id="quienIn" data-quien="1" value="${esc(EQUIPO.includes(q)?"":q)}" placeholder="¿Quién vino?"></div>`:""}
+    ${q!==t.persona?`<span class="small" style="color:var(--warn);font-weight:600">Reemplazo: ${esc(q||"…")} en lugar de ${esc(t.persona)}</span>`:""}</div>`;
 }
 
 function vCierre(){
@@ -465,6 +479,8 @@ $app.addEventListener("click",async e=>{
   else if(a==="abrir")abrirTurno(id,false);
   else if(a==="ver")abrirTurno(id,true);
   else if(a==="lista"){S.view="lista";render()}
+  else if(a==="quien"){S.quienOtro=false;S.reg.persona=b.dataset.v;saveReg();render()}
+  else if(a==="quienOtro"){S.quienOtro=true;render();document.getElementById("quienIn")?.focus()}
   else if(a==="nohice"){S.motOpen.add(id);render();document.getElementById("m_"+id)?.focus()}
   else if(a==="tic"){S.motOpen.delete(id);const it=item(id);it.hecho=!it.hecho;it.hora=it.hecho?horaAhora():"";if(it.hecho){it.motivo="";it.comentario=""}saveReg();render()}
   else if(a==="opt"){const it=item(id);it.dato=b.dataset.v;saveReg();render()}
@@ -501,7 +517,8 @@ $app.addEventListener("click",async e=>{
 
 $app.addEventListener("input",e=>{
   const el=e.target;
-  if(el.dataset.dato){item(el.dataset.dato).dato=el.value;saveReg()}
+  if(el.dataset.quien){S.reg.persona=el.value.trim();saveReg()}
+  else if(el.dataset.dato){item(el.dataset.dato).dato=el.value;saveReg()}
   else if(el.dataset.coment){item(el.dataset.coment).comentario=el.value;saveReg()}
 });
 $app.addEventListener("change",e=>{
