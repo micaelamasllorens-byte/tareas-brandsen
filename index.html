@@ -313,6 +313,7 @@ function resumenTexto(){
   if(hechas.length){s+=`\n\n✔️ *Hechas*`;hechas.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto}${it.hora?` (${it.hora})`:""}`})}
   const noRest=no.filter(x=>!x.obligatoria);
   if(noRest.length){s+=`\n\n❌ *No hechas*`;noRest.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
+  if((S.reg.notas||"").trim())s+=`\n\n📝 *Notas*\n${S.reg.notas.trim()}`;
   const datos=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.dato);
   if(datos.length){s+=`\n\n📋 *Avisos*`;datos.forEach(x=>{s+=`\n• ${x.campo.label}: ${S.reg.items[x.id].dato}`})}
   const fotos=hechas.filter(x=>x.foto);
@@ -380,9 +381,13 @@ function vLista(){
     ${ro?(S.regExiste?`<div class="note">Así quedó el ${esc(S.reg.fechaTxt)}${S.reg.cerrado?` · cerrado ${esc(S.reg.cerradoHora)}`:" · no se cerró el turno"}. Solo lectura.</div>`
       :`<div class="note">Esta lista es del ${DIAS[t.dia].toLowerCase()}. Solo se puede tildar el día del turno (hoy es ${DIAS[diaOp(0).getDay()].toLowerCase()}).</div>`):""}
   </section>
+  ${ro&&(S.reg.notas||"").trim()?`<div class="note" style="white-space:pre-wrap">📝 ${esc(S.reg.notas.trim())}</div>`:""}
   ${reglaSoporte(t)}
   ${tareas.length?`${ro&&!S.regExiste?"":`<div class="prog"><div class="bar"><i style="width:${pct}%"></i></div><b>${hechas}/${tareas.length}</b></div>`}
     ${bloques}
+    ${ro?"":`<section class="block"><h2>Notas del turno</h2>
+      <div class="field" style="padding-top:10px"><label for="notasIn">Pedidos, stock, novedades o lo que quieras avisar. Sale en el resumen.</label>
+      <textarea id="notasIn" data-notas="1" rows="4" placeholder="Ej: hice el pedido de Casa Dany, faltan Marlboro box 20">${esc(S.reg.notas||"")}</textarea></div></section>`}
     ${ro?"":`<div class="reset">${S.resetOk?`<div class="confirm"><span>¿Empezar la lista de cero? Lo que marcaste queda guardado en el historial.</span><button class="btn primary" data-act="resetSi" ${S.busy?"disabled":""}>Sí, vaciar</button><button class="btn" data-act="resetNo">No</button></div>`:`<button class="linkbtn muted2" data-act="reset">Vaciar mi lista y empezar de cero</button>`}</div>`}
     ${ro?"":`<div class="endbar"><div class="endin"><span><b>${hechas}/${tareas.length}</b> hechas</span><button class="btn primary" data-act="cierre">Terminar turno y enviar</button></div></div>`}`
   :`<div class="empty">Todavía no hay tareas cargadas para este turno.<br>Se cargan desde “Administrar tareas”.</div>`}`;
@@ -503,18 +508,19 @@ function vAdminHist(){
       <div class="row"><span class="chip ${pct===1?"ok":pct>=.7?"":"warn"}">${r.hechas||0}/${r.total||0} hechas</span><span class="chip ${r.cerrado?"ok":"warn"}">${r.cerrado?"Cerrado "+esc(r.cerradoHora):"Sin cerrar"}</span>${r.archivada?`<span class="chip">Lista vaciada ${esc(r.archivadaHora||"")}${r.archivadaPor==="admin"?" (admin)":""}</span>`:""}${statsReg(r).oblNo.length?`<span class="chip must">${statsReg(r).oblNo.length} obligatoria${statsReg(r).oblNo.length>1?"s":""} sin hacer</span>`:""}${tildesRapidos(r)?`<span class="chip warn">Tildes de golpe</span>`:""}</div>
       ${open?`<div class="det">${horas.length?`<span class="muted">Tildes entre ${horas.sort()[0]} y ${horas.sort().slice(-1)[0]}</span>`:""}
         ${no.length?no.map(x=>{const i=r.items?.[x.id]||{};return `<span>❌ ${esc(x.texto)} → <b>${esc(i.motivo||"sin motivo")}</b>${i.comentario?` (${esc(i.comentario)})`:""}</span>`}).join(""):"<span>Todas hechas.</span>"}
-        ${snap.filter(x=>x.campo&&r.items?.[x.id]?.dato).map(x=>`<span>📋 ${esc(x.campo)}: ${esc(r.items[x.id].dato)}</span>`).join("")}</div>`:""}
+        ${snap.filter(x=>x.campo&&r.items?.[x.id]?.dato).map(x=>`<span>📋 ${esc(x.campo)}: ${esc(r.items[x.id].dato)}</span>`).join("")}
+        ${(r.notas||"").trim()?`<span style="white-space:pre-wrap">📝 ${esc(r.notas.trim())}</span>`:""}</div>`:""}
     </button>`}).join("")}</section>`;
 }
 
 /* ---------- archivar y vaciar (el historial nunca pierde nada) ---------- */
-const tieneContenido=d=>!!d&&(d.cerrado||Object.values(d.items||{}).some(i=>i.hecho||i.motivo||i.dato));
+const tieneContenido=d=>!!d&&(d.cerrado||(d.notas||"").trim()||Object.values(d.items||{}).some(i=>i.hecho||i.motivo||i.dato));
 async function archivarYVaciar(id,turnoId,fecha,data,quien){
   if(tieneContenido(data)){
     const arch={...clone(data),archivada:true,archivadaHora:horaAhora(),archivadaPor:quien};
     await api("registros",{method:"POST",prefer:"return=minimal",body:{id:id+"~"+Date.now(),fecha,turno_id:turnoId,data:arch,actualizado:new Date().toISOString()}});
   }
-  const limpio={...clone(data),items:{},cerrado:false,cerradoHora:"",hechas:0,actualizado:new Date().toISOString()};
+  const limpio={...clone(data),items:{},notas:"",cerrado:false,cerradoHora:"",hechas:0,actualizado:new Date().toISOString()};
   await api("registros?on_conflict=id",{method:"POST",prefer:"resolution=merge-duplicates,return=minimal",body:{id,fecha,turno_id:turnoId,data:limpio,actualizado:limpio.actualizado}});
   return limpio;
 }
@@ -671,7 +677,7 @@ $app.addEventListener("click",async e=>{
     try{const rows=await api("registros?select=id,turno_id,data&fecha=eq."+f);
       const vivos=rows.filter(r=>!r.id.includes("~")&&tieneContenido(r.data));
       for(const r of vivos)await archivarYVaciar(r.id,r.turno_id,f,r.data,"admin");
-      if(S.reg&&S.reg.fecha===f){S.reg.items={};S.reg.cerrado=false;S.reg.cerradoHora=""}
+      if(S.reg&&S.reg.fecha===f){S.reg.items={};S.reg.notas="";S.reg.cerrado=false;S.reg.cerradoHora=""}
       S.motOpen=new Set();S.vaciarOk=false;S.busy=false;render();toast(vivos.length?`Listo: ${vivos.length} ${vivos.length===1?"lista vaciada":"listas vaciadas"}`:"No había listas tildadas hoy")}
     catch(e){S.busy=false;S.vaciarOk=false;render();toast("No se pudo vaciar. Revisá la conexión.")}}
   else if(a==="reset"){S.resetOk=true;render()}
@@ -692,7 +698,8 @@ $app.addEventListener("click",async e=>{
 
 $app.addEventListener("input",e=>{
   const el=e.target;
-  if(el.dataset.quien){S.reg.persona=el.value.trim();saveReg()}
+  if(el.dataset.notas){S.reg.notas=el.value;saveReg()}
+  else if(el.dataset.quien){S.reg.persona=el.value.trim();saveReg()}
   else if(el.dataset.dato){item(el.dataset.dato).dato=el.value;saveReg()}
   else if(el.dataset.coment){item(el.dataset.coment).comentario=el.value;saveReg()}
 });
