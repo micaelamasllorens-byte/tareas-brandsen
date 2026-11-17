@@ -168,6 +168,17 @@ footer{display:flex;justify-content:center}
 .stklast b{font-family:var(--f-display);font-size:26px;line-height:1.1;overflow-wrap:anywhere}
 .delta{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
 .delta.down{color:var(--red)}.delta.up{color:var(--ok)}
+.applink{align-self:flex-start;font-weight:700;font-size:14px;color:var(--red);text-decoration:none;border:1px solid var(--red);border-radius:6px;padding:4px 10px}
+.stk.open{border-color:var(--red)}
+.stkhead{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:none;border:0;padding:0;text-align:left;width:100%}
+.stkname{font-family:var(--f-label);font-weight:400;font-size:19px;letter-spacing:.04em;text-transform:uppercase;color:var(--red);margin:0}
+.stktbl td.prod small{display:block;color:var(--muted);font-size:12px}
+.stktbl td.num,.stktbl th.num{text-align:right}
+.stktbl tr.low td{background:var(--warn-soft)}
+.stktbl tr.cat td{font-family:var(--f-label);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-size:12px;padding-top:14px}
+.mini{display:inline-flex;align-items:flex-end;gap:2px;height:22px;width:70px}
+.mini i{flex:1;background:var(--muted);border-radius:2px 2px 0 0;min-height:0}
+.mini i.last{background:var(--red)}
 .sbars{display:flex;gap:4px;align-items:flex-end;height:110px;margin-top:6px}
 .sb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%}
 .st{flex:1;width:100%;display:flex;align-items:flex-end;background:var(--line);border-radius:4px;overflow:hidden}
@@ -391,6 +402,7 @@ function vLista(){
       return `<div class="task ${it.hecho?"done":""} ${x.obligatoria?"oblig":""}">
         <button class="cb" data-act="tic" data-id="${x.id}" aria-pressed="${!!it.hecho}" aria-label="Marcar hecha" ${ro?"disabled":""}>${ICON_CHECK}</button>
         <div class="txt"><span class="tt">${esc(x.texto)}</span>
+          ${x.link==="pedidos"?`<a class="applink" href="${PEDIDOS_URL}" target="_blank" rel="noopener">Abrir app de pedidos ↗</a>`:""}
           ${(x.foto||it.hora||x.obligatoria||x.unica)?`<div class="meta">${x.obligatoria?`<span class="chip must">Obligatoria</span>`:""}${x.unica?`<span class="chip once">Solo una vez</span>`:""}${x.foto?`<span class="chip">${ICON_CAM} Foto al grupo</span>`:""}${it.hora?`<span class="hora">Hecha ${it.hora}${it.hechoPor?` por ${esc(it.hechoPor)} (turno siguiente)`:""}</span>`:""}</div>`:""}
           ${ro&&!it.hecho&&it.motivo?`<span class="err">No se hizo: ${esc(it.motivo)}${it.comentario?` (${esc(it.comentario)})`:""}</span>`:""}
           ${!ro&&!it.hecho?((it.motivo||S.motOpen.has(x.id))?`<div class="nohice">
@@ -683,40 +695,83 @@ function vPendientes(){
 }
 
 /* ---------- seguimiento de stock ---------- */
+const PEDIDOS_URL="https://micaelamasllorens-byte.github.io/PEDIDOS-KIOSCO/";
 const esStock=l=>/stock|quedan/i.test(l||"");
-const numDe=v=>{const m=String(v||"").replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null};
+const numDe=v=>{const m=String(v??"").replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null};
+const fCorta=d=>{const x=new Date(d.length<=10?d+"T12:00:00":d);return `${x.getDate()}/${x.getMonth()+1}`};
 async function cargarStock(){
   S.stk=null;render();
   const d=diaOp(0);d.setDate(d.getDate()-(S.stkDias||56));
-  try{const rows=await api(`registros?select=id,fecha,data&fecha=gte.${fechaKey(d)}&order=fecha.asc&limit=2000`);
+  try{
+    const [fotos,rows]=await Promise.all([
+      api(`stock_fotos?select=proveedor_id,proveedor,tipo,empleado,stock_fecha,variante,items,tomado&tomado=gte.${d.toISOString()}&order=tomado.asc&limit=3000`),
+      api(`registros?select=id,fecha,data&fecha=gte.${fechaKey(d)}&order=fecha.asc&limit=2000`)]);
+    const P={};
+    fotos.forEach(f=>{(P[f.proveedor_id]=P[f.proveedor_id]||{id:f.proveedor_id,nombre:f.proveedor,tipo:f.tipo,fotos:[]}).fotos.push(f);P[f.proveedor_id].nombre=f.proveedor});
     const G={};
     rows.forEach(r=>{const dt=r.data||{};if(dt.archivada)return;
       (dt.tareasSnapshot||[]).forEach(x=>{const v=(dt.items?.[x.id]?.dato||"").trim();
         if(x.campo&&esStock(x.campo)&&v){(G[x.campo]=G[x.campo]||[]).push({fecha:r.fecha,quien:dt.persona||"",v,n:numDe(v)})}})});
-    S.stk=Object.entries(G).map(([label,arr])=>({label,arr})).sort((a,b)=>b.arr.slice(-1)[0].fecha.localeCompare(a.arr.slice(-1)[0].fecha));
-  }catch(e){S.stk=[];toast("No se pudo cargar el stock.")}
+    S.stk={prov:Object.values(P).sort((a,b)=>b.fotos.slice(-1)[0].tomado.localeCompare(a.fotos.slice(-1)[0].tomado)),
+      tareas:Object.entries(G).map(([label,arr])=>({label,arr}))};
+  }catch(e){S.stk={prov:[],tareas:[]};toast("No se pudo cargar el stock.")}
   if(S.view==="admin"&&S.aTab==="stock")render();
+}
+function miniBarras(vals){
+  const nums=vals.filter(v=>v!==null);if(nums.length<2)return "";
+  const max=Math.max(1,...nums);
+  return `<span class="mini" aria-hidden="true">${vals.slice(-10).map((v,i,a)=>`<i class="${i===a.length-1?"last":""}" style="height:${v===null?0:Math.max(8,v/max*100)}%"></i>`).join("")}</span>`;
+}
+function vProveedor(p,pi){
+  const fotos=p.fotos;const last=fotos[fotos.length-1];const prev=fotos.length>1?fotos[fotos.length-2]:null;
+  const cuando=last.stock_fecha?fCorta(last.stock_fecha):fCorta(last.tomado);
+  const open=S.stkOpen===pi;
+  const clasico=p.tipo==="clasico";
+  let bajos=0;
+  const filas=last.items.map((it,idx)=>{
+    const ahora=it.s;const nA=numDe(ahora);
+    const antes=prev?prev.items.find(x=>x.n===it.n)?.s:undefined;const nB=numDe(antes);
+    const ideal=clasico?numDe(it.i):null;
+    const falta=ideal!==null&&nA!==null&&nA<ideal;if(falta)bajos++;
+    const hist=fotos.map(f=>numDe(f.items.find(x=>x.n===it.n)?.s));
+    let cambio="";if(nA!==null&&nB!==null&&nA!==nB){const d=nA-nB;cambio=`<span class="delta ${d<0?"down":"up"}">${d>0?"+":""}${d}</span>`}
+    return {it,html:`<tr class="${falta?"low":""}"><td class="prod">${esc(it.n)}${it.v?`<small>Vence ${esc(it.v)}</small>`:""}</td>
+      <td class="num"><b>${ahora==null?"—":esc(ahora)}</b></td>
+      ${clasico?`<td class="num">${ideal??"—"}</td>`:""}
+      <td class="num">${antes==null?"—":esc(antes)}</td><td class="num">${cambio}</td><td>${miniBarras(hist)}</td></tr>`};
+  });
+  let lastCat=null;
+  const body=filas.map(f=>{let h="";if(f.it.cat&&f.it.cat!==lastCat){lastCat=f.it.cat;h=`<tr class="cat"><td colspan="${clasico?6:5}">${esc(lastCat)}</td></tr>`}return h+f.html}).join("");
+  const tot=fotos.map(f=>f.items.reduce((s,x)=>s+(numDe(x.s)||0),0));
+  const totChart=fotos.length>=2?`<div class="sbars" role="img" aria-label="Unidades totales en cada carga">${tot.slice(-12).map((v,i,a)=>`<div class="sb"><span class="sv">${v}</span><span class="st"><i class="${i===a.length-1?"last":""}" style="height:${Math.max(4,v/Math.max(1,...a)*100)}%"></i></span><span class="sl">${fCorta(fotos[fotos.length-a.length+i].stock_fecha||fotos[fotos.length-a.length+i].tomado)}</span></div>`).join("")}</div>`:"";
+  return `<div class="stk ${open?"open":""}">
+    <button class="stkhead" data-act="stkOpen" data-v="${pi}" aria-expanded="${open}">
+      <span class="stkname">${esc(p.nombre)}</span>
+      <span class="muted small">Último: ${cuando}${last.empleado?` · ${esc(last.empleado)}`:""}${last.variante?` · ${esc(last.variante)}`:""} · ${fotos.length} ${fotos.length===1?"carga":"cargas"}</span>
+      ${clasico&&bajos?`<span class="chip warn">${bajos} debajo del ideal</span>`:""}
+    </button>
+    ${open?`${totChart?`<span class="muted small">Unidades totales en cada carga</span>${totChart}`:""}
+      <div class="tbl"><table class="stktbl"><thead><tr><th>Producto</th><th class="num">Ahora</th>${clasico?`<th class="num">Ideal</th>`:""}<th class="num">Antes</th><th class="num">Cambio</th><th>Evolución</th></tr></thead><tbody>${body}</tbody></table></div>`:""}
+  </div>`;
 }
 function vStock(){
   const per=`<div class="row"><span class="muted small">Período:</span>${[[28,"4 semanas"],[56,"8 semanas"],[120,"4 meses"]].map(([n,l])=>`<button class="opt ${(S.stkDias||56)===n?"on":""}" data-act="stkDias" data-v="${n}">${l}</button>`).join("")}</div>`;
   if(!S.stk)return per+`<div class="empty">Cargando stock…</div>`;
-  if(!S.stk.length)return per+`<div class="empty">Todavía no hay stocks anotados. Van a aparecer acá cuando los chicos completen los campos de stock en sus listas (hielo, huevos, Capitán, pegamentos, cigarrillos, Casa Dany, Jockey, Nobleza y Massalin, PepsiCo, Orense).</div>`;
-  const f=d=>{const [y,m,dd]=d.split("-");return `${+dd}/${+m}`};
-  return per+`<div class="stkgrid">${S.stk.map((g,gi)=>{
-    const last=g.arr[g.arr.length-1];const nums=g.arr.filter(x=>x.n!==null);
-    const prev=g.arr.length>1?g.arr[g.arr.length-2]:null;
+  const intro=`<p class="muted small" style="margin:0">Los stocks de la <a href="${PEDIDOS_URL}" target="_blank" rel="noopener">app de pedidos</a> se guardan solos cada vez que alguien carga uno nuevo (se revisa cada 20 minutos). La app de pedidos guarda solo el último stock; acá queda todo el historial.</p>`;
+  const prov=S.stk.prov.length?`<div class="stack">${S.stk.prov.map(vProveedor).join("")}</div>`:`<div class="empty">Todavía no hay stocks guardados de la app de pedidos.</div>`;
+  const f=d=>fCorta(d);
+  const tareas=S.stk.tareas.length?`<section class="stack"><h2>Anotados en las listas de tareas</h2><div class="stkgrid">${S.stk.tareas.map((g,gi)=>{
+    const last=g.arr[g.arr.length-1];const nums=g.arr.filter(x=>x.n!==null);const prev=g.arr.length>1?g.arr[g.arr.length-2]:null;
     let delta="";if(prev&&last.n!==null&&prev.n!==null){const d=last.n-prev.n;delta=`<span class="delta ${d<0?"down":d>0?"up":""}">${d>0?"▲ +":d<0?"▼ ":"= "}${d!==0?d:""}</span>`}
     const max=Math.max(1,...nums.map(x=>x.n));
-    const chart=nums.length>=2?`<div class="sbars" role="img" aria-label="Evolución de ${esc(g.label)}">${nums.slice(-12).map((x,i,a)=>`<div class="sb"><span class="sv">${x.n}</span><span class="st"><i class="${i===a.length-1?"last":""}" style="height:${Math.max(4,x.n/max*100)}%"></i></span><span class="sl">${f(x.fecha)}</span></div>`).join("")}</div>`:"";
-    const open=S.stkOpen===gi;
-    return `<div class="stk">
-      <div class="stkh"><h3>${esc(g.label.replace(/^Stock de /i,""))}</h3><span class="muted small">${g.arr.length} ${g.arr.length===1?"registro":"registros"}</span></div>
-      <div class="stklast"><b>${last.n!==null&&String(last.n)===last.v.trim()?last.n:esc(last.v.length>60?last.v.slice(0,60)+"…":last.v)}</b>${delta}</div>
-      <span class="muted small">Último: ${f(last.fecha)} · ${esc(last.quien)}</span>
-      ${chart}
-      <button class="linkbtn muted2" data-act="stkOpen" data-v="${gi}">${open?"Ocultar registros":"Ver todos los registros"}</button>
-      ${open?`<ul class="lst">${g.arr.slice().reverse().map(x=>`<li><b>${f(x.fecha)} · ${esc(x.quien)}</b>: <span style="white-space:pre-wrap">${esc(x.v)}</span></li>`).join("")}</ul>`:""}
-    </div>`}).join("")}</div>`;
+    const chart=nums.length>=2?`<div class="sbars">${nums.slice(-12).map((x,i,a)=>`<div class="sb"><span class="sv">${x.n}</span><span class="st"><i class="${i===a.length-1?"last":""}" style="height:${Math.max(4,x.n/max*100)}%"></i></span><span class="sl">${f(x.fecha)}</span></div>`).join("")}</div>`:"";
+    const key="t"+gi;const open=S.stkOpenT===key;
+    return `<div class="stk"><h3 class="stkname">${esc(g.label.replace(/^Stock de /i,""))}</h3>
+      <div class="stklast"><b>${esc(last.v.length>40?last.v.slice(0,40)+"…":last.v)}</b>${delta}</div>
+      <span class="muted small">Último: ${f(last.fecha)} · ${esc(last.quien)}</span>${chart}
+      <button class="linkbtn muted2" data-act="stkOpenT" data-v="${key}">${open?"Ocultar registros":"Ver todos los registros"}</button>
+      ${open?`<ul class="lst">${g.arr.slice().reverse().map(x=>`<li><b>${f(x.fecha)} · ${esc(x.quien)}</b>: ${esc(x.v)}</li>`).join("")}</ul>`:""}</div>`}).join("")}</div></section>`:"";
+  return `${per}${intro}<section class="stack"><h2>App de pedidos</h2>${prov}</section>${tareas}`;
 }
 
 function render(){
@@ -765,6 +820,7 @@ $app.addEventListener("click",async e=>{
     catch(e){toast("No se pudo guardar. Revisá la conexión.")}}
   else if(a==="stkDias"){S.stkDias=+b.dataset.v;S.stkOpen=null;cargarStock()}
   else if(a==="stkOpen"){S.stkOpen=S.stkOpen===+b.dataset.v?null:+b.dataset.v;render()}
+  else if(a==="stkOpenT"){S.stkOpenT=S.stkOpenT===b.dataset.v?null:b.dataset.v;render()}
   else if(a==="opt"){const it=item(id);it.dato=b.dataset.v;saveReg();render()}
   else if(a==="cierre"){S.view="cierre";S.cierreErr=false;render();window.scrollTo(0,0)}
   else if(a==="cerrar"){
