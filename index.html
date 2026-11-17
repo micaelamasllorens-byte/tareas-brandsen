@@ -157,6 +157,24 @@ h2{font-family:var(--f-label);font-weight:400;font-size:17px;letter-spacing:.07e
 footer{display:flex;justify-content:center}
 .chip.must{background:var(--red);color:#fff}
 .chip.once{background:var(--ink);color:var(--bg)}
+.pendblock h2{color:var(--warn)}
+.pendblock{background:var(--warn-soft);border-radius:10px;padding:12px 12px 0}
+.pendblock .task{border-bottom-color:rgba(0,0,0,.08)}
+.stkgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.stk{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stkh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.stk h3{font-family:var(--f-label);font-weight:400;font-size:18px;letter-spacing:.04em;text-transform:uppercase;color:var(--red);margin:0;min-width:0}
+.stklast{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.stklast b{font-family:var(--f-display);font-size:26px;line-height:1.1;overflow-wrap:anywhere}
+.delta{font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.delta.down{color:var(--red)}.delta.up{color:var(--ok)}
+.sbars{display:flex;gap:4px;align-items:flex-end;height:110px;margin-top:6px}
+.sb{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;height:100%}
+.st{flex:1;width:100%;display:flex;align-items:flex-end;background:var(--line);border-radius:4px;overflow:hidden}
+.st i{display:block;width:100%;background:var(--muted);border-radius:4px 4px 0 0}
+.st i.last{background:var(--red)}
+.sv{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums}
+.sl{font-size:10px;color:var(--muted);white-space:nowrap}
 .ib.onceb{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .task.oblig .cb{border-color:var(--red)}
 .pend.oblig{border-left-color:var(--red)}
@@ -298,7 +316,7 @@ async function abrirTurno(id,readonly){
   S.turnoId=id;S.readonly=false;S.cierreErr=false;S.quienOtro=false;S.resetOk=false;
   const d=diaOp(0);const key=fechaKey(d)+"_"+id;
   S.reg={id:key,fecha:fechaKey(d),fechaTxt:fechaCorta(d),turnoId:id,turnoNombre:t.nombre,persona:t.persona,formato:t.formato,items:{},cerrado:false,cerradoHora:""};
-  S.regExiste=false;S.view="lista";render();window.scrollTo(0,0);
+  S.regExiste=false;S.pend=[];S.view="lista";render();window.scrollTo(0,0);cargarPendientes(id);
   if(!S.db)return;
   try{const rows=await api("registros?select=data&id=eq."+encodeURIComponent(key));
     if(rows&&rows.length&&S.turnoId===id){const d0=rows[0].data;S.reg=Object.assign(S.reg,clone(d0));S.regExiste=true;if(S.reg.cerrado&&!readonly)S.view="resumen";render()}}
@@ -316,9 +334,11 @@ function resumenTexto(){
   if(S.reg.cerradoHora)s+=` · Cerrado ${S.reg.cerradoHora}`;
   const oblNo=no.filter(x=>x.obligatoria);
   if(oblNo.length){s+=`\n\n⚠️ *OBLIGATORIAS SIN HACER*`;oblNo.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
+  const pHechos=(S.pend||[]).filter(p=>p.hecho);
   if(hechas.length){s+=`\n\n✔️ *Hechas*`;hechas.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto}${it.hora?` (${it.hora})`:""}`})}
   const noRest=no.filter(x=>!x.obligatoria);
   if(noRest.length){s+=`\n\n❌ *No hechas*`;noRest.forEach(x=>{const it=S.reg.items[x.id]||{};s+=`\n• ${x.texto} → ${it.motivo||"sin motivo"}${it.comentario?` (${it.comentario})`:""}`})}
+  if(pHechos.length){s+=`\n\n🔁 *Pendientes de otros turnos que hice*`;pHechos.forEach(p=>{s+=`\n• ${p.texto} (dejada por ${p.de_quien})${p.hecho_hora?` (${p.hecho_hora})`:""}`})}
   if((S.reg.notas||"").trim())s+=`\n\n📝 *Notas*\n${S.reg.notas.trim()}`;
   const datos=tareas.filter(x=>x.campo&&S.reg.items[x.id]?.dato);
   if(datos.length){s+=`\n\n📋 *Avisos*`;datos.forEach(x=>{s+=`\n• ${x.campo.label}: ${S.reg.items[x.id].dato}`})}
@@ -371,12 +391,12 @@ function vLista(){
       return `<div class="task ${it.hecho?"done":""} ${x.obligatoria?"oblig":""}">
         <button class="cb" data-act="tic" data-id="${x.id}" aria-pressed="${!!it.hecho}" aria-label="Marcar hecha" ${ro?"disabled":""}>${ICON_CHECK}</button>
         <div class="txt"><span class="tt">${esc(x.texto)}</span>
-          ${(x.foto||it.hora||x.obligatoria||x.unica)?`<div class="meta">${x.obligatoria?`<span class="chip must">Obligatoria</span>`:""}${x.unica?`<span class="chip once">Solo una vez</span>`:""}${x.foto?`<span class="chip">${ICON_CAM} Foto al grupo</span>`:""}${it.hora?`<span class="hora">Hecha ${it.hora}</span>`:""}</div>`:""}
+          ${(x.foto||it.hora||x.obligatoria||x.unica)?`<div class="meta">${x.obligatoria?`<span class="chip must">Obligatoria</span>`:""}${x.unica?`<span class="chip once">Solo una vez</span>`:""}${x.foto?`<span class="chip">${ICON_CAM} Foto al grupo</span>`:""}${it.hora?`<span class="hora">Hecha ${it.hora}${it.hechoPor?` por ${esc(it.hechoPor)} (turno siguiente)`:""}</span>`:""}</div>`:""}
           ${ro&&!it.hecho&&it.motivo?`<span class="err">No se hizo: ${esc(it.motivo)}${it.comentario?` (${esc(it.comentario)})`:""}</span>`:""}
           ${!ro&&!it.hecho?((it.motivo||S.motOpen.has(x.id))?`<div class="nohice">
               <div class="field"><label for="m_${x.id}">¿Por qué no se pudo hacer?</label>
               <select id="m_${x.id}" data-motivo="${x.id}"><option value="">Elegí un motivo</option>${MOTIVOS.map(m=>`<option ${it.motivo===m?"selected":""}>${esc(m)}</option>`).join("")}</select></div>
-              <div class="field">${campoComent(x,it)}</div></div>`
+              <div class="field">${campoComent(x,it)}</div>${it.motivo===PEND?`<span class="small" style="font-weight:600">Pasa a la lista de ${esc(siguienteTurno(t)?.persona||"el turno siguiente")} (${esc(siguienteTurno(t)?.nombre||"")})</span>`:""}</div>`
             :`<button class="linkbtn" data-act="nohice" data-id="${x.id}">No la pude hacer</button>`):""}
           ${campo}</div></div>`}).join("")}</section>`).join("");
   return `<button class="btn ghost back" data-act="home">${ICON_BACK} Turnos</button>
@@ -389,6 +409,7 @@ function vLista(){
   </section>
   ${ro&&(S.reg.notas||"").trim()?`<div class="note" style="white-space:pre-wrap">📝 ${esc(S.reg.notas.trim())}</div>`:""}
   ${reglaSoporte(t)}
+  ${ro?"":vPendientes()}
   ${tareas.length?`${ro&&!S.regExiste?"":`<div class="prog"><div class="bar"><i style="width:${pct}%"></i></div><b>${hechas}/${tareas.length}</b></div>`}
     ${bloques}
     ${ro?"":`<section class="block"><h2>Notas del turno</h2>
@@ -448,11 +469,12 @@ function vLogin(){
 }
 
 function vAdmin(){
-  const tabs=`<div class="tabs noprint">${[["tareas","Tareas"],["semanal","Semanal"],["historial","Historial"],["vaciar","Vaciar"],["codigo","Código"]].map(([k,l])=>`<button class="tab ${S.aTab===k?"on":""}" data-act="atab" data-v="${k}">${l}</button>`).join("")}</div>`;
+  const tabs=`<div class="tabs noprint">${[["tareas","Tareas"],["semanal","Semanal"],["stock","Stock"],["historial","Historial"],["vaciar","Vaciar"],["codigo","Código"]].map(([k,l])=>`<button class="tab ${S.aTab===k?"on":""}" data-act="atab" data-v="${k}">${l}</button>`).join("")}</div>`;
   let body="";
   if(S.aTab==="tareas")body=vAdminTareas();
   if(S.aTab==="historial")body=vAdminHist();
   if(S.aTab==="semanal")body=vSemanal();
+  if(S.aTab==="stock")body=vStock();
   if(S.aTab==="vaciar"){const hoy=diaOp(0);
     body=`<div class="form"><h2>Vaciar listas de hoy</h2>
     <p class="muted" style="margin:0">Deja sin tildar todas las listas de hoy (${DIAS[hoy.getDay()].toLowerCase()} ${hoy.getDate()}/${hoy.getMonth()+1}). Lo que estaba marcado no se pierde: queda guardado en el Historial como “lista vaciada”.</p>
@@ -621,6 +643,82 @@ function semanaTexto(){
   return s;
 }
 
+/* ---------- pendientes que pasan al turno siguiente ---------- */
+const PEND="La dejé para el próximo turno (avisado)";
+function finTurno(t){const m=String(t.horario||"").match(/a\s*(\d{1,2})(?::(\d{2}))?/);if(!m)return null;
+  let v=(+m[1])*100+(+(m[2]||0));if(v<(t.inicio||0))v+=2400;return v}
+function siguienteTurno(t){
+  const fin=finTurno(t);
+  const ok=x=>x.id!==t.id&&(x.formato==="turno8"||(x.formato==="noche"&&x.dia===t.dia&&fin!==null&&(x.inicio||0)>=fin));
+  for(let k=0;k<8;k++){const dia=(t.dia+k)%7;
+    const c=S.turnos.filter(x=>ok(x)&&x.dia===dia&&(k>0||(x.inicio||0)>(t.inicio||0))).sort((a,b)=>(a.inicio||0)-(b.inicio||0));
+    if(c.length)return c[0];}
+  return null;
+}
+async function syncPendiente(tareaId){
+  const t=turno(S.reg.turnoId);const x=(t?.tareas||[]).find(z=>z.id===tareaId);if(!x)return;
+  const it=S.reg.items[tareaId]||{};const pid=S.reg.id+"_"+tareaId;
+  try{
+    if(it.motivo===PEND&&!it.hecho){
+      const dest=siguienteTurno(t);if(!dest)return;
+      await api("pendientes?on_conflict=id",{method:"POST",prefer:"resolution=merge-duplicates,return=minimal",body:{id:pid,origen_registro:S.reg.id,origen_turno:t.id,tarea_id:tareaId,texto:x.texto,de_quien:S.reg.persona||t.persona,origen_fecha:S.reg.fecha,destino_turno:dest.id}});
+      x._dest=dest;render();
+    }else{
+      await api("pendientes?id=eq."+encodeURIComponent(pid)+"&hecho=eq.false",{method:"DELETE",prefer:"return=minimal"});
+    }
+  }catch(e){toast("No se pudo pasar la tarea al turno siguiente. Revisá la conexión.")}
+}
+async function cargarPendientes(turnoId){
+  S.pend=[];
+  try{const rows=await api(`pendientes?select=*&destino_turno=eq.${encodeURIComponent(turnoId)}&or=(hecho.eq.false,hecho_fecha.eq.${hoyKey()})&order=creado.asc`);
+    if(S.turnoId===turnoId){S.pend=rows||[];render()}}catch(e){}
+}
+function vPendientes(){
+  const p=S.pend||[];if(!p.length)return "";
+  const f=d=>{const [y,m,dd]=d.split("-");return `${+dd}/${+m}`};
+  return `<section class="block pendblock"><h2>Pendientes del turno anterior</h2>${p.map(x=>`<div class="task ${x.hecho?"done":""}">
+    <button class="cb" data-act="ptic" data-id="${esc(x.id)}" aria-pressed="${x.hecho}" aria-label="Marcar hecha">${ICON_CHECK}</button>
+    <div class="txt"><span class="tt">${esc(x.texto)}</span>
+    <div class="meta"><span class="chip once">Dejada por ${esc(x.de_quien)} · ${f(x.origen_fecha)}</span>${x.hecho?`<span class="hora">Hecha ${esc(x.hecho_hora||"")}</span>`:""}</div></div></div>`).join("")}</section>`;
+}
+
+/* ---------- seguimiento de stock ---------- */
+const esStock=l=>/stock|quedan/i.test(l||"");
+const numDe=v=>{const m=String(v||"").replace(",",".").match(/-?\d+(\.\d+)?/);return m?parseFloat(m[0]):null};
+async function cargarStock(){
+  S.stk=null;render();
+  const d=diaOp(0);d.setDate(d.getDate()-(S.stkDias||56));
+  try{const rows=await api(`registros?select=id,fecha,data&fecha=gte.${fechaKey(d)}&order=fecha.asc&limit=2000`);
+    const G={};
+    rows.forEach(r=>{const dt=r.data||{};if(dt.archivada)return;
+      (dt.tareasSnapshot||[]).forEach(x=>{const v=(dt.items?.[x.id]?.dato||"").trim();
+        if(x.campo&&esStock(x.campo)&&v){(G[x.campo]=G[x.campo]||[]).push({fecha:r.fecha,quien:dt.persona||"",v,n:numDe(v)})}})});
+    S.stk=Object.entries(G).map(([label,arr])=>({label,arr})).sort((a,b)=>b.arr.slice(-1)[0].fecha.localeCompare(a.arr.slice(-1)[0].fecha));
+  }catch(e){S.stk=[];toast("No se pudo cargar el stock.")}
+  if(S.view==="admin"&&S.aTab==="stock")render();
+}
+function vStock(){
+  const per=`<div class="row"><span class="muted small">Período:</span>${[[28,"4 semanas"],[56,"8 semanas"],[120,"4 meses"]].map(([n,l])=>`<button class="opt ${(S.stkDias||56)===n?"on":""}" data-act="stkDias" data-v="${n}">${l}</button>`).join("")}</div>`;
+  if(!S.stk)return per+`<div class="empty">Cargando stock…</div>`;
+  if(!S.stk.length)return per+`<div class="empty">Todavía no hay stocks anotados. Van a aparecer acá cuando los chicos completen los campos de stock en sus listas (hielo, huevos, Capitán, pegamentos, cigarrillos, Casa Dany, Jockey, Nobleza y Massalin, PepsiCo, Orense).</div>`;
+  const f=d=>{const [y,m,dd]=d.split("-");return `${+dd}/${+m}`};
+  return per+`<div class="stkgrid">${S.stk.map((g,gi)=>{
+    const last=g.arr[g.arr.length-1];const nums=g.arr.filter(x=>x.n!==null);
+    const prev=g.arr.length>1?g.arr[g.arr.length-2]:null;
+    let delta="";if(prev&&last.n!==null&&prev.n!==null){const d=last.n-prev.n;delta=`<span class="delta ${d<0?"down":d>0?"up":""}">${d>0?"▲ +":d<0?"▼ ":"= "}${d!==0?d:""}</span>`}
+    const max=Math.max(1,...nums.map(x=>x.n));
+    const chart=nums.length>=2?`<div class="sbars" role="img" aria-label="Evolución de ${esc(g.label)}">${nums.slice(-12).map((x,i,a)=>`<div class="sb"><span class="sv">${x.n}</span><span class="st"><i class="${i===a.length-1?"last":""}" style="height:${Math.max(4,x.n/max*100)}%"></i></span><span class="sl">${f(x.fecha)}</span></div>`).join("")}</div>`:"";
+    const open=S.stkOpen===gi;
+    return `<div class="stk">
+      <div class="stkh"><h3>${esc(g.label.replace(/^Stock de /i,""))}</h3><span class="muted small">${g.arr.length} ${g.arr.length===1?"registro":"registros"}</span></div>
+      <div class="stklast"><b>${last.n!==null&&String(last.n)===last.v.trim()?last.n:esc(last.v.length>60?last.v.slice(0,60)+"…":last.v)}</b>${delta}</div>
+      <span class="muted small">Último: ${f(last.fecha)} · ${esc(last.quien)}</span>
+      ${chart}
+      <button class="linkbtn muted2" data-act="stkOpen" data-v="${gi}">${open?"Ocultar registros":"Ver todos los registros"}</button>
+      ${open?`<ul class="lst">${g.arr.slice().reverse().map(x=>`<li><b>${f(x.fecha)} · ${esc(x.quien)}</b>: <span style="white-space:pre-wrap">${esc(x.v)}</span></li>`).join("")}</ul>`:""}
+    </div>`}).join("")}</div>`;
+}
+
 function render(){
   const v={home:vHome,lista:vLista,cierre:vCierre,resumen:vResumen,adminLogin:vLogin,admin:vAdmin}[S.view]||vHome;
   $app.innerHTML=v();
@@ -655,12 +753,18 @@ $app.addEventListener("click",async e=>{
   else if(a==="quien"){S.quienOtro=false;S.reg.persona=b.dataset.v;saveReg();render()}
   else if(a==="quienOtro"){S.quienOtro=true;render();document.getElementById("quienIn")?.focus()}
   else if(a==="nohice"){S.motOpen.add(id);render();document.getElementById("m_"+id)?.focus()}
-  else if(a==="tic"){S.motOpen.delete(id);const it=item(id);
+  else if(a==="tic"){S.motOpen.delete(id);const it=item(id);const eraPend=it.motivo===PEND;
     const tx=(turno(S.reg.turnoId)?.tareas||[]).find(x=>x.id===id);
     if(tx?.unica){const nuevo=!it.hecho;
       rpc("marcar_unica",{p_turno:S.reg.turnoId,p_tarea:id,p_fecha:nuevo?S.reg.fecha:null}).then(()=>{
         const t=turno(S.reg.turnoId);if(t){const arr=clone(t.todas||t.tareas);const y=arr.find(z=>z.id===id);if(y){if(nuevo)y.hechaEn=S.reg.fecha;else delete y.hechaEn}setTareas(t.id,arr)}
-      }).catch(()=>toast("No se pudo guardar. Revisá la conexión."))}it.hecho=!it.hecho;it.hora=it.hecho?horaAhora():"";if(it.hecho){it.motivo="";it.comentario=""}saveReg();render()}
+      }).catch(()=>toast("No se pudo guardar. Revisá la conexión."))}it.hecho=!it.hecho;it.hora=it.hecho?horaAhora():"";if(it.hecho){it.motivo="";it.comentario=""}saveReg();if(eraPend)syncPendiente(id);render()}
+  else if(a==="ptic"){const p=(S.pend||[]).find(x=>x.id===id);if(!p)return;const t=turno(S.reg.turnoId);const nuevo=!p.hecho;const hora=horaAhora();
+    try{await rpc("completar_pendiente",{p_id:id,p_hecho:nuevo,p_quien:S.reg.persona||t?.persona||"",p_hora:hora,p_fecha:S.reg.fecha});
+      p.hecho=nuevo;p.hecho_hora=nuevo?hora:null;p.hecho_por=nuevo?(S.reg.persona||t?.persona):null;render();if(nuevo)toast("Listo. Queda marcada también en el turno de "+p.de_quien)}
+    catch(e){toast("No se pudo guardar. Revisá la conexión.")}}
+  else if(a==="stkDias"){S.stkDias=+b.dataset.v;S.stkOpen=null;cargarStock()}
+  else if(a==="stkOpen"){S.stkOpen=S.stkOpen===+b.dataset.v?null:+b.dataset.v;render()}
   else if(a==="opt"){const it=item(id);it.dato=b.dataset.v;saveReg();render()}
   else if(a==="cierre"){S.view="cierre";S.cierreErr=false;render();window.scrollTo(0,0)}
   else if(a==="cerrar"){
@@ -674,7 +778,7 @@ $app.addEventListener("click",async e=>{
     catch(_){const r=document.createRange();r.selectNodeContents(document.getElementById("sumtxt"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Texto seleccionado: copialo con el menú")}}
   else if(a==="adminLogin"){S.loginErr="";S.view=S.admin?"admin":"adminLogin";if(S.admin&&!S.aTurno)S.aTurno=S.turnos[0]?.id;render()}
   else if(a==="salir"){S.admin=false;S.view="home";render()}
-  else if(a==="atab"){S.aTab=b.dataset.v;S.aConfirm=null;if(S.aTab==="historial")cargarHist();if(S.aTab==="semanal")cargarSemana();render()}
+  else if(a==="atab"){S.aTab=b.dataset.v;S.aConfirm=null;if(S.aTab==="historial")cargarHist();if(S.aTab==="semanal")cargarSemana();if(S.aTab==="stock")cargarStock();render()}
   else if(a==="del"){S.aConfirm=id;render()}
   else if(a==="delNo"){S.aConfirm=null;render()}
   else if(a==="delOk"){const t=turnoAdm(S.aTurno);t.tareas=t.tareas.filter(x=>x.id!==id);S.aConfirm=null;if(await guardarTurno(t))toast("Tarea eliminada")}
@@ -718,7 +822,7 @@ $app.addEventListener("input",e=>{
 });
 $app.addEventListener("change",e=>{
   const el=e.target;
-  if(el.dataset.motivo){item(el.dataset.motivo).motivo=el.value;saveReg();render()}
+  if(el.dataset.motivo){const prev=item(el.dataset.motivo).motivo;item(el.dataset.motivo).motivo=el.value;saveReg();if(prev===PEND||el.value===PEND)syncPendiente(el.dataset.motivo);render()}
   else if(el.id==="histFecha"){S.histFecha=el.value;cargarHist()}
   else if(el.id==="aSel"){S.aTurno=el.value;S.aConfirm=null;render()}
   else if(el.id==="nBloque"){S.aBloqueNuevo=el.value==="__nuevo";document.getElementById("nbWrap").hidden=!S.aBloqueNuevo}
